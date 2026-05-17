@@ -37,6 +37,15 @@ window.Cart = {
     }
   },
 
+  deleteItem(id) {
+    if (this.items[id]) {
+      delete this.items[id];
+      this.save();
+      this.updateUI();
+      document.dispatchEvent(new CustomEvent('cartChanged'));
+    }
+  },
+
   getQty(id) {
     return this.items[id] || 0;
   },
@@ -95,6 +104,7 @@ window.Cart = {
           <div class="cart-item">
             <div class="cart-item-name">${l.qty}x ${utils.esc(l.name)}</div>
             <div class="cart-item-price">${utils.currency(l.price * l.qty)}</div>
+            <button class="cart-item-remove-btn" onclick="Cart.deleteItem(${l.id})" style="background:none; border:none; color:var(--clr-new); cursor:pointer; font-size:1.4rem; padding:0 var(--sp-1); margin-left:var(--sp-2); display:flex; align-items:center; justify-content:center; font-weight:bold; line-height:1;" title="Remove item">×</button>
           </div>
         `).join('');
       }
