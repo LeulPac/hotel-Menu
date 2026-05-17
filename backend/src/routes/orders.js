@@ -50,8 +50,15 @@ router.post('/', async (req, res) => {
       [parseInt(table_number), JSON.stringify(validatedItems), total.toFixed(2)]
     );
 
+    const parseJson = (val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch(e) { return []; }
+      }
+      return val || [];
+    };
+
     const [newOrder] = await db.execute('SELECT * FROM orders WHERE id = ?', [result.insertId]);
-    const order = { ...newOrder[0], items: JSON.parse(newOrder[0].items) };
+    const order = { ...newOrder[0], items: parseJson(newOrder[0].items) };
 
     // Broadcast to admin dashboard in real-time
     if (_io) _io.emit('newOrder', order);
@@ -66,6 +73,13 @@ router.post('/', async (req, res) => {
 // ─── Admin: List Orders ───────────────────────────────────────────────────────
 // GET /api/orders  – all orders, most recent first (with optional status filter)
 router.get('/', requireAuth, async (req, res) => {
+  const parseJson = (val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch(e) { return []; }
+    }
+    return val || [];
+  };
+
   try {
     const { status, limit = 100 } = req.query;
     let sql    = 'SELECT * FROM orders';
@@ -75,7 +89,7 @@ router.get('/', requireAuth, async (req, res) => {
     args.push(parseInt(limit));
 
     const [rows] = await db.execute(sql, args);
-    const orders = rows.map(r => ({ ...r, items: JSON.parse(r.items) }));
+    const orders = rows.map(r => ({ ...r, items: parseJson(r.items) }));
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load orders.' });
@@ -84,11 +98,18 @@ router.get('/', requireAuth, async (req, res) => {
 
 // GET /api/orders/live  – active orders (not Delivered) – for polling fallback
 router.get('/live', requireAuth, async (req, res) => {
+  const parseJson = (val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch(e) { return []; }
+    }
+    return val || [];
+  };
+
   try {
     const [rows] = await db.execute(
       "SELECT * FROM orders WHERE status != 'Delivered' ORDER BY created_at DESC"
     );
-    const orders = rows.map(r => ({ ...r, items: JSON.parse(r.items) }));
+    const orders = rows.map(r => ({ ...r, items: parseJson(r.items) }));
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load live orders.' });
@@ -97,6 +118,13 @@ router.get('/live', requireAuth, async (req, res) => {
 
 // PATCH /api/orders/:id/status  – advance order status
 router.patch('/:id/status', requireAuth, async (req, res) => {
+  const parseJson = (val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch(e) { return []; }
+    }
+    return val || [];
+  };
+
   const { status } = req.body;
   const allowed    = ['New', 'Preparing', 'Ready', 'Delivered'];
   if (!allowed.includes(status)) {
@@ -106,7 +134,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     await db.execute('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
     const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Order not found.' });
-    const order = { ...rows[0], items: JSON.parse(rows[0].items) };
+    const order = { ...rows[0], items: parseJson(rows[0].items) };
 
     if (_io) _io.emit('orderUpdated', order);
     res.json(order);

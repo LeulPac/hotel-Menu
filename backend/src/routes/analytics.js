@@ -45,8 +45,15 @@ router.get('/:period', requireAuth, async (req, res) => {
       [start, end]
     );
 
+    const parseJson = (val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch(e) { return []; }
+      }
+      return val || [];
+    };
+
     // Parse JSON items
-    const parsed = orders.map(o => ({ ...o, items: JSON.parse(o.items) }));
+    const parsed = orders.map(o => ({ ...o, items: parseJson(o.items) }));
 
     // ── Fetch Menu Categories for precise mapping
     const [menuRows] = await db.execute('SELECT name, category FROM menu_items');
@@ -112,7 +119,7 @@ router.get('/:period', requireAuth, async (req, res) => {
     );
     const recentOrders = recentRows.map(o => ({ 
       ...o, 
-      items: JSON.parse(o.items) 
+      items: parseJson(o.items) 
     }));
 
     res.json({
@@ -137,13 +144,20 @@ router.get('/:period/pdf', requireAuth, async (req, res) => {
   const period = req.params.period;
   const { start, end } = dateRange(period);
 
+  const parseJson = (val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch(e) { return []; }
+    }
+    return val || [];
+  };
+
   try {
     const [orders] = await db.execute(
       `SELECT id, table_number, items, total, created_at
        FROM orders WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC`,
       [start, end]
     );
-    const parsed      = orders.map(o => ({ ...o, items: JSON.parse(o.items) }));
+    const parsed      = orders.map(o => ({ ...o, items: parseJson(o.items) }));
     const totalRevenue = parsed.reduce((s, o) => s + parseFloat(o.total), 0);
     const totalOrders  = parsed.length;
     const avg          = totalOrders ? totalRevenue / totalOrders : 0;
