@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Hotel System</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/admin.css?v=2">
+</head>
+<body class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-title">Hotel System</div>
+      <div class="sidebar-logo-sub">Management Portal</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-tab="live">
+        <span class="nav-item-icon">🔔</span> Live Orders
+      </a>
+      <a class="nav-item" data-tab="menu">
+        <span class="nav-item-icon">📋</span> Menu Management
+      </a>
+      <a class="nav-item" data-tab="analytics">
+        <span class="nav-item-icon">📊</span> Analytics
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="logout-btn" onclick="auth.logout()">
+        <span>🚪</span> Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-topbar">
+      <div>
+        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <h1 class="topbar-title" id="page-title">Live Orders</h1>
+      </div>
+      <div style="display:flex; align-items:center; gap:var(--sp-4);">
+        <div class="topbar-time" id="clock">--:--</div>
+        <div class="notif-bell" id="notif-bell" onclick="document.querySelector('[data-tab=live]').click()">
+          🔔
+          <div class="notif-dot" id="notif-dot"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tab: Live Orders -->
+    <div id="tab-live" class="tab-content">
+      <div class="filter-tabs" style="margin-bottom:var(--sp-5);">
+        <button class="filter-tab active" data-filter="all">All Active</button>
+        <button class="filter-tab" data-filter="New">New</button>
+        <button class="filter-tab" data-filter="Preparing">Preparing</button>
+        <button class="filter-tab" data-filter="Ready">Ready</button>
+      </div>
+      <div id="orders-grid" class="orders-grid">
+        <!-- Orders injected here -->
+      </div>
+    </div>
+
+    <!-- Tab: Menu Management -->
+    <div id="tab-menu" class="tab-content hidden">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>Menu Items</h2>
+          <button class="btn btn-primary btn-sm" onclick="menuAdmin.openModal()">+ Add Item</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="menu-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="menu-tbody">
+              <!-- Menu rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Analytics -->
+    <div id="tab-analytics" class="tab-content hidden">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="period-tabs" id="analytics-tabs">
+          <button class="period-tab active" data-period="daily">Daily</button>
+          <button class="period-tab" data-period="weekly">Weekly</button>
+          <button class="period-tab" data-period="monthly">Monthly</button>
+          <button class="period-tab" data-period="yearly">Yearly</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="analyticsAdmin.exportPDF()">
+          <span>📥</span> Export PDF
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value" id="stat-rev">$0.00</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="stat-orders">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Avg Order Value</div>
+          <div class="stat-value" id="stat-avg">$0.00</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:var(--sp-5); margin-bottom:var(--sp-5);">
+        <div class="section-card" style="margin-bottom:0;">
+          <div class="section-card-header"><h2>Revenue Over Time</h2></div>
+          <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+        </div>
+        <div class="section-card" style="margin-bottom:0;">
+          <div class="section-card-header"><h2>Revenue by Category</h2></div>
+          <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:var(--sp-5); margin-bottom:var(--sp-5);">
+        <div class="section-card" style="margin-bottom:0;">
+          <div class="section-card-header"><h2>Top Selling Items</h2></div>
+          <div class="top-items-list" id="top-items"></div>
+        </div>
+        <div class="section-card" style="margin-bottom:0;">
+          <div class="section-card-header"><h2>Revenue by Table</h2></div>
+          <table class="rev-table">
+            <thead><tr><th>Table</th><th style="text-align:right">Revenue</th></tr></thead>
+            <tbody id="table-rev-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header"><h2>Recent Orders (Billing)</h2></div>
+        <div style="overflow-x:auto;">
+          <table class="menu-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Time</th>
+                <th>Table</th>
+                <th>Total</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Menu Item Modal -->
+  <div class="modal-backdrop" id="menu-modal-backdrop"></div>
+  <div class="modal" id="menu-modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Add Menu Item</h2>
+      <div class="modal-close" onclick="menuAdmin.closeModal()">✕</div>
+    </div>
+    <form class="modal-form" id="menu-form" onsubmit="event.preventDefault(); menuAdmin.saveItem()">
+      <input type="hidden" id="item-id">
+      
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" id="item-name" class="form-input" required>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="item-cat" class="form-input" required>
+            <option value="Starters">Starters</option>
+            <option value="Main Course">Main Course</option>
+            <option value="Grills">Grills</option>
+            <option value="Desserts">Desserts</option>
+            <option value="Drinks">Drinks</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price ($)</label>
+          <input type="number" id="item-price" class="form-input" step="0.01" min="0" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="item-desc" class="form-input" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Photos (Select Multiple)</label>
+        <input type="file" id="item-img" class="form-input" accept="image/jpeg, image/png, image/webp" multiple onchange="menuAdmin.previewImage(event)">
+        <div id="item-img-preview" style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;"></div>
+      </div>
+
+      <div class="form-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:var(--sp-2); padding-top:var(--sp-4); border-top:1px solid var(--clr-border);">
+        <label class="form-label" style="margin:0;">Available for order</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="item-avail" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:var(--sp-3); margin-top:var(--sp-4);">
+        <button type="button" class="btn btn-ghost" onclick="menuAdmin.closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="item-save-btn">Save Item</button>
+      </div>
+    </form>
+  </div>
+
+  <audio id="audio-alert" src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3" preload="auto"></audio>
+
+  <!-- External libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Bypass browser cache for latest fixes -->
+  <script src="/js/utils.js?v=3"></script>
+  <script src="/js/api.js?v=3"></script>
+  <script src="/js/admin/auth.js?v=3"></script>
+  <script src="/js/admin/live.js?v=3"></script>
+  <script src="/js/admin/menuAdmin.js?v=3"></script>
+  <script src="/js/admin/analytics.js?v=3"></script>
+
+  <script>
+    // Tab switching logic
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => {
+      el.addEventListener('click', e => {
+        const tab = e.currentTarget.dataset.tab;
+        
+        // Update sidebar
+        document.querySelectorAll('.sidebar-nav .nav-item').forEach(n => n.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        
+        // Update title
+        const titles = { live:'Live Orders', menu:'Menu Management', analytics:'Analytics' };
+        document.getElementById('page-title').textContent = titles[tab];
+        
+        // Update content views
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById('tab-' + tab).classList.remove('hidden');
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+          document.getElementById('sidebar').classList.remove('open');
+        }
+
+        // Init specific tab data
+        if (tab === 'menu') menuAdmin.load();
+        if (tab === 'analytics') analyticsAdmin.load();
+      });
+    });
+
+    // Clock
+    setInterval(() => {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }, 1000);
+  </script>
+</body>
+</html>

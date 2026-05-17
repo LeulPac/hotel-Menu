@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Hotel System</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏢</div>
+      <h1 class="login-title">Admin Portal</h1>
+      <p class="login-sub">Sign in to manage orders and menu</p>
+    </div>
+
+    <div id="login-error" class="login-error">Invalid credentials</div>
+
+    <form id="login-form" class="login-form" onsubmit="event.preventDefault(); auth.login()">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" required autofocus>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" required>
+      </div>
+      
+      <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:var(--sp-2);">
+        Sign In
+      </button>
+    </form>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/admin/auth.js"></script>
+</body>
+</html>

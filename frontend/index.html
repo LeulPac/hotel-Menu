@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Digital Menu | Hotel Restaurant</title>
+  
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/main.css?v=2">
+</head>
+<body>
+
+  <!-- Menu Flow Wrapper -->
+  <div id="menu-wrapper" class="page-wrapper">
+    
+    <!-- Hero Header -->
+    <header class="site-header">
+      <div class="header-logo">The Grand Hotel</div>
+      <h1 class="header-title">Our Menu</h1>
+      <p class="header-subtitle">Tap to add items to your order.</p>
+    </header>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <div class="search-inner">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search dishes..." autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="category-tabs" id="category-tabs">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Section Title -->
+    <div class="section-heading">
+      <span id="section-heading-text">Menu</span>
+    </div>
+
+    <!-- Grid -->
+    <main class="menu-grid" id="menu-grid">
+      <!-- Cards Injected by JS -->
+    </main>
+
+    <!-- Sticky Cart Bar -->
+    <div id="cart-bar" class="cart-bar" onclick="Cart.openModal()">
+      <div class="cart-bar-left">
+        <div class="cart-bubble" id="cart-count">0</div>
+        <div class="cart-label">View Order</div>
+      </div>
+      <div class="cart-bar-right">
+        <div class="cart-total" id="cart-total">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="overlay" class="overlay" onclick="Cart.closeModal()"></div>
+    <div id="cart-modal" class="cart-modal">
+      <div class="cart-modal-handle"></div>
+      <div class="cart-modal-header">
+        <h2>Your Order Summary</h2>
+        <button class="cart-close-btn" onclick="Cart.closeModal()">✕</button>
+      </div>
+      
+      <div class="cart-items" id="cart-items">
+        <!-- Cart rows injected here -->
+      </div>
+      
+      <div class="cart-footer">
+        <div class="cart-total-row">
+          <div class="cart-total-label">Total Amount</div>
+          <div class="cart-total-amt" id="cart-modal-total">$0.00</div>
+        </div>
+        
+        <div class="table-input-wrap">
+          <label class="table-input-label" for="table-input">
+            Which table are you sitting at? <span class="req">*</span>
+          </label>
+          <input type="number" id="table-input" class="table-number-input" placeholder="e.g. 12" min="1" required>
+          <div id="table-error" class="table-error-msg">Please enter a valid table number.</div>
+        </div>
+        
+        <button id="place-order-btn" class="btn btn-primary btn-block btn-lg" onclick="Cart.submitOrder()" disabled>
+          Confirm & Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Flow Wrapper -->
+  <div id="success-wrapper" class="page-wrapper hidden" style="background:var(--clr-surface);min-height:100vh;">
+    <div class="order-success">
+      <div class="success-icon">✓</div>
+      <h1 class="success-title">Order Sent!</h1>
+      <p class="success-msg">Your order has been sent to the kitchen. Sit back and relax, your food will be ready soon.</p>
+      
+      <button class="btn btn-ghost" style="margin-top:2rem;" onclick="location.reload()">
+        Back to Menu
+      </button>
+    </div>
+  </div>
+
+  <script src="/js/utils.js?v=4"></script>
+  <script src="/js/api.js?v=4"></script>
+  <script src="/js/cart.js?v=4"></script>
+  <script src="/js/menu.js?v=4"></script>
+</body>
+</html>
