@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({ success: true, orderId: result.insertId, total: order.total });
   } catch (err) {
     console.error('Order error:', err);
-    res.status(500).json({ error: 'Failed to place order.' });
+    res.status(500).json({ error: `Failed to place order: ${err.message}` });
   }
 });
 
