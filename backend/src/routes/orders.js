@@ -11,13 +11,25 @@ function setIo(io) { _io = io; }
 // ─── Customer: Submit Order ───────────────────────────────────────────────────
 // POST /api/orders
 router.post('/', async (req, res) => {
-  const { table_number, items } = req.body;
+  const { table_number, customer_name, customer_phone, customer_location, items } = req.body;
 
-  if (!table_number || !items || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: 'table_number and items[] are required.' });
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'items[] are required.' });
   }
-  if (isNaN(parseInt(table_number)) || parseInt(table_number) < 1) {
-    return res.status(400).json({ error: 'table_number must be a positive integer.' });
+
+  let finalTable = null;
+  let isDelivery = false;
+
+  if (!table_number) {
+    if (!customer_name || !customer_phone || !customer_location) {
+      return res.status(400).json({ error: 'Either table_number OR delivery details (name, phone, location) are required.' });
+    }
+    isDelivery = true;
+  } else {
+    if (isNaN(parseInt(table_number)) || parseInt(table_number) < 1) {
+      return res.status(400).json({ error: 'table_number must be a positive integer.' });
+    }
+    finalTable = parseInt(table_number);
   }
 
   // Verify each item exists and is available; use DB price (trust server, not client)
@@ -46,8 +58,8 @@ router.post('/', async (req, res) => {
     }
 
     const [result] = await db.execute(
-      'INSERT INTO orders (table_number, items, total) VALUES (?, ?, ?)',
-      [parseInt(table_number), JSON.stringify(validatedItems), total.toFixed(2)]
+      'INSERT INTO orders (table_number, customer_name, customer_phone, customer_location, items, total) VALUES (?, ?, ?, ?, ?, ?)',
+      [finalTable, customer_name || null, customer_phone || null, customer_location || null, JSON.stringify(validatedItems), total.toFixed(2)]
     );
 
     const parseJson = (val) => {

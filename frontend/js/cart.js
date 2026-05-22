@@ -3,6 +3,7 @@
 window.Cart = {
   items: {}, // { itemId: qty }
   menuItems: [], // cache of loaded menu
+  orderType: 'hotel', // 'hotel' or 'delivery'
 
   init() {
     try {
@@ -129,49 +130,107 @@ window.Cart = {
     document.getElementById('overlay').classList.remove('active');
   },
 
-  validateTable() {
-    const input = document.getElementById('table-input');
-    const btn   = document.getElementById('place-order-btn');
-    const err   = document.getElementById('table-error');
-    if(!input || !btn) return;
+  setOrderType(type) {
+    this.orderType = type;
+    const tabHotel = document.getElementById('tab-hotel');
+    const tabDelivery = document.getElementById('tab-delivery');
+    const formHotel = document.getElementById('form-hotel');
+    const formDelivery = document.getElementById('form-delivery');
 
-    const val = input.value.trim();
-    if (!val || isNaN(val) || parseInt(val) < 1) {
-      btn.disabled = true;
-      if (val !== '') {
-        input.classList.add('error');
-        err.classList.add('show');
-      } else {
-        input.classList.remove('error');
-        err.classList.remove('show');
-      }
-      return false;
+    if (type === 'hotel') {
+      tabHotel.className = 'btn btn-primary';
+      tabDelivery.className = 'btn btn-ghost';
+      formHotel.style.display = 'block';
+      formDelivery.style.display = 'none';
+    } else {
+      tabHotel.className = 'btn btn-ghost';
+      tabDelivery.className = 'btn btn-primary';
+      formHotel.style.display = 'none';
+      formDelivery.style.display = 'flex';
     }
     
-    input.classList.remove('error');
-    err.classList.remove('show');
-    btn.disabled = false;
-    return true;
+    this.validateTable();
+  },
+
+  validateTable() {
+    const btn = document.getElementById('place-order-btn');
+    if (!btn) return false;
+
+    if (this.orderType === 'hotel') {
+      const input = document.getElementById('table-input');
+      const err = document.getElementById('table-error');
+      if (!input) return false;
+      
+      const val = input.value.trim();
+      if (!val || isNaN(val) || parseInt(val) < 1) {
+        btn.disabled = true;
+        if (val !== '') {
+          input.classList.add('error');
+          err.classList.add('show');
+        } else {
+          input.classList.remove('error');
+          err.classList.remove('show');
+        }
+        return false;
+      }
+      
+      input.classList.remove('error');
+      err.classList.remove('show');
+      btn.disabled = false;
+      return true;
+
+    } else {
+      const name = document.getElementById('delivery-name');
+      const phone = document.getElementById('delivery-phone');
+      const loc = document.getElementById('delivery-location');
+      const err = document.getElementById('delivery-error');
+      
+      const isComplete = name.value.trim() && phone.value.trim() && loc.value.trim();
+      
+      if (!isComplete) {
+        btn.disabled = true;
+        if (name.value.trim() || phone.value.trim() || loc.value.trim()) {
+          err.classList.add('show');
+        } else {
+          err.classList.remove('show');
+        }
+        return false;
+      }
+      
+      err.classList.remove('show');
+      btn.disabled = false;
+      return true;
+    }
   },
 
   async submitOrder() {
     if (!this.validateTable()) return;
 
-    const table_number = document.getElementById('table-input').value.trim();
+    const payload = {};
+    if (this.orderType === 'hotel') {
+      payload.table_number = document.getElementById('table-input').value.trim();
+    } else {
+      payload.customer_name = document.getElementById('delivery-name').value.trim();
+      payload.customer_phone = document.getElementById('delivery-phone').value.trim();
+      payload.customer_location = document.getElementById('delivery-location').value.trim();
+    }
+
     const { lines } = this.getTotals();
-    
-    const items = lines.map(l => ({ itemId: l.id, qty: l.qty }));
+    payload.items = lines.map(l => ({ itemId: l.id, qty: l.qty }));
     
     const btn = document.getElementById('place-order-btn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;margin:0;border-width:2px;"></span> Placing...';
 
     try {
-      const res = await api.post('/api/orders', { table_number, items });
+      const res = await api.post('/api/orders', payload);
       
       this.closeModal();
       this.clear();
       document.getElementById('table-input').value = '';
+      document.getElementById('delivery-name').value = '';
+      document.getElementById('delivery-phone').value = '';
+      document.getElementById('delivery-location').value = '';
       
       // Show success screen
       document.getElementById('menu-wrapper').classList.add('hidden');
@@ -181,7 +240,7 @@ window.Cart = {
       console.error(err);
       utils.toast(err.message || 'Failed to place order', 'error');
       btn.disabled = false;
-      btn.textContent = 'Place Order';
+      btn.textContent = 'Confirm & Place Order';
     }
   }
 };

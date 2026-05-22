@@ -75,12 +75,34 @@
           <div class="cart-total-amt" id="cart-modal-total">$0.00</div>
         </div>
         
-        <div class="table-input-wrap">
+        <!-- Order Type Selection -->
+        <div class="order-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button id="tab-hotel" class="btn btn-primary" style="flex:1" onclick="Cart.setOrderType('hotel')">At the Hotel</button>
+          <button id="tab-delivery" class="btn btn-ghost" style="flex:1" onclick="Cart.setOrderType('delivery')">Far Away (Delivery)</button>
+        </div>
+        
+        <div id="form-hotel" class="table-input-wrap">
           <label class="table-input-label" for="table-input">
             Which table are you sitting at? <span class="req">*</span>
           </label>
-          <input type="number" id="table-input" class="table-number-input" placeholder="e.g. 12" min="1" required>
+          <input type="number" id="table-input" class="table-number-input" placeholder="e.g. 12" min="1" oninput="Cart.validateTable()">
           <div id="table-error" class="table-error-msg">Please enter a valid table number.</div>
+        </div>
+        
+        <div id="form-delivery" class="table-input-wrap" style="display: none; flex-direction: column; gap: 12px; max-height: 35vh; overflow-y: auto;">
+          <div>
+            <label class="table-input-label" for="delivery-name">Full Name <span class="req">*</span></label>
+            <input type="text" id="delivery-name" class="table-number-input" placeholder="e.g. John Doe" oninput="Cart.validateTable()">
+          </div>
+          <div>
+            <label class="table-input-label" for="delivery-phone">Phone Number <span class="req">*</span></label>
+            <input type="tel" id="delivery-phone" class="table-number-input" placeholder="e.g. +1 234 567 8900" oninput="Cart.validateTable()">
+          </div>
+          <div>
+            <label class="table-input-label" for="delivery-location">Delivery Location <span class="req">*</span></label>
+            <textarea id="delivery-location" class="table-number-input" placeholder="e.g. 123 Main St, Apt 4B" rows="2" style="resize:vertical" oninput="Cart.validateTable()"></textarea>
+          </div>
+          <div id="delivery-error" class="table-error-msg">Please fill out all delivery fields.</div>
         </div>
         
         <button id="place-order-btn" class="btn btn-primary btn-block btn-lg" onclick="Cart.submitOrder()" disabled>

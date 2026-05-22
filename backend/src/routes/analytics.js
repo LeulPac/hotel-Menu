@@ -38,7 +38,7 @@ router.get('/:period', requireAuth, async (req, res) => {
 
   try {
     const [orders] = await db.execute(
-      `SELECT id, table_number, items, total, created_at
+      `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
        FROM orders
        WHERE created_at BETWEEN ? AND ?
        ORDER BY created_at ASC`,
@@ -103,7 +103,7 @@ router.get('/:period', requireAuth, async (req, res) => {
     // ── Revenue by table
     const tableMap = {};
     parsed.forEach(o => {
-      const t = `Table ${o.table_number}`;
+      const t = o.table_number ? `Table ${o.table_number}` : `Delivery / Takeaway`;
       tableMap[t] = (tableMap[t] || 0) + parseFloat(o.total);
     });
     const revenueByTable = Object.entries(tableMap)
@@ -112,7 +112,7 @@ router.get('/:period', requireAuth, async (req, res) => {
 
     // ── Recent Orders (for bill printing) - Independent of Date Filter
     const [recentRows] = await db.execute(
-      `SELECT id, table_number, items, total, created_at
+      `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
        FROM orders
        ORDER BY created_at DESC
        LIMIT 50`
@@ -153,7 +153,7 @@ router.get('/:period/pdf', requireAuth, async (req, res) => {
 
   try {
     const [orders] = await db.execute(
-      `SELECT id, table_number, items, total, created_at
+      `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
        FROM orders WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC`,
       [start, end]
     );
@@ -203,7 +203,8 @@ router.get('/:period/pdf', requireAuth, async (req, res) => {
     doc.fontSize(10).fillColor('#333');
     parsed.slice(0, 100).forEach(o => {
       const dt = new Date(o.created_at).toLocaleString();
-      doc.text(`#${o.id}  Table ${o.table_number}  $${parseFloat(o.total).toFixed(2)}  ${dt}`);
+      const tableStr = o.table_number ? `Table ${o.table_number}` : `Delivery (${o.customer_name})`;
+      doc.text(`#${o.id}  ${tableStr}  $${parseFloat(o.total).toFixed(2)}  ${dt}`);
     });
     if (parsed.length > 100) doc.text(`... and ${parsed.length - 100} more orders.`);
 

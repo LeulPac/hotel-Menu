@@ -134,16 +134,30 @@ window.liveAdmin = {
         actionHtml = `<button class="status-btn status-btn-done" onclick="liveAdmin.updateStatus(${o.id}, 'Delivered')">Deliver</button>`;
       }
 
+      const tableStr = o.table_number ? `T${o.table_number}` : 'Delivery';
+      
+      let customerHtml = '';
+      if (!o.table_number && o.customer_name) {
+        customerHtml = `
+          <div class="order-customer-details" style="font-size: 13px; color: var(--clr-text-secondary); margin-bottom: 8px; border-bottom: 1px dashed var(--clr-border); padding-bottom: 8px;">
+            <strong>👤 ${utils.esc(o.customer_name)}</strong><br>
+            📞 <a href="tel:${utils.esc(o.customer_phone)}" style="color:var(--clr-primary); text-decoration:none;">${utils.esc(o.customer_phone)}</a><br>
+            📍 ${utils.esc(o.customer_location)}
+          </div>
+        `;
+      }
+
       return `
         <div class="order-card status-${o.status.toLowerCase()} ${o.status === 'New' && (Date.now() - new Date(o.created_at).getTime() < 30000) ? 'is-new' : ''}">
           <div class="order-card-head">
             <div style="display:flex; align-items:baseline; gap:var(--sp-2)">
-              <span class="order-table-num">T${o.table_number}</span>
+              <span class="order-table-num">${tableStr}</span>
               <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
             </div>
             <div class="order-time">${utils.timeAgo(o.created_at)}</div>
           </div>
           <div class="order-items-list">
+            ${customerHtml}
             ${itemsHtml}
           </div>
           <div class="order-card-foot">

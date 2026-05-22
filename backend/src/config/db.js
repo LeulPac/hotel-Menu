@@ -50,6 +50,13 @@ const pool = mysql.createPool({
       console.warn('⚠️  [DB-AutoFix] Could not alter menu_items table:', e.message);
     }
 
+    // Auto-fix/seed for delivery feature
+    try { await pool.execute('ALTER TABLE orders MODIFY COLUMN table_number INT NULL'); } catch (e) {}
+    try { await pool.execute('ALTER TABLE orders ADD COLUMN customer_name VARCHAR(255) DEFAULT NULL'); } catch (e) {}
+    try { await pool.execute('ALTER TABLE orders ADD COLUMN customer_location TEXT DEFAULT NULL'); } catch (e) {}
+    try { await pool.execute('ALTER TABLE orders ADD COLUMN customer_phone VARCHAR(50) DEFAULT NULL'); } catch (e) {}
+
+
   } catch (err) {
     console.error('❌  MySQL connection failed:', err.message);
     process.exit(1);

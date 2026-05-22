@@ -220,11 +220,12 @@ window.analyticsAdmin = {
 
     tbody.innerHTML = orders.map(o => {
       const dt = new Date(o.created_at).toLocaleString();
+      const tableStr = o.table_number ? `Table ${o.table_number}` : `Delivery (${utils.esc(o.customer_name)})`;
       return `
         <tr>
           <td><strong>#${o.id}</strong></td>
           <td class="text-muted">${dt}</td>
-          <td><span class="badge" style="background:var(--clr-surface-2)">Table ${o.table_number}</span></td>
+          <td><span class="badge" style="background:var(--clr-surface-2)">${tableStr}</span></td>
           <td><strong>${utils.currency(o.total)}</strong></td>
           <td style="text-align:right">
             <button class="btn btn-sm btn-ghost" style="color:var(--clr-primary)" onclick="utils.printBill(${o.id})">🖨️ Print Bill</button>
