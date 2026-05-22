@@ -1,0 +1,57 @@
+8:57:56 AM  [main] 	Initializing Control Panel
+8:57:56 AM  [main] 	Windows Version:  Enterprise  64-bit
+8:57:56 AM  [main] 	XAMPP Version: 8.2.12
+8:57:56 AM  [main] 	Control Panel Version: 3.3.0  [ Compiled: Apr 6th 2021 ]
+8:57:56 AM  [main] 	Running with Administrator rights - good!
+8:57:56 AM  [main] 	XAMPP Installation Directory: "c:\xampp\app\"
+8:57:56 AM  [main] 	Checking for prerequisites
+8:57:56 AM  [main] 	All prerequisites found
+8:57:56 AM  [main] 	Initializing Modules
+8:57:56 AM  [Apache] 	XAMPP Apache is already running on port 80
+8:57:56 AM  [Apache] 	XAMPP Apache is already running on port 443
+8:57:56 AM  [mysql] 	XAMPP MySQL is already running on port 3306
+8:57:56 AM  [filezilla] 	XAMPP FileZilla is already running on port 21
+8:57:56 AM  [filezilla] 	XAMPP FileZilla is already running on port 14147
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 25
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 79
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 105
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 106
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 110
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 143
+8:57:56 AM  [mercury] 	XAMPP Mercury is already running on port 2224
+8:57:56 AM  [Tomcat] 	Java is already running on port 8005!
+8:57:56 AM  [Tomcat] 	Is Tomcat already running?
+8:57:56 AM  [Tomcat] 	Java is already running on port 8080!
+8:57:56 AM  [Tomcat] 	Is Tomcat already running?
+8:57:56 AM  [main] 	Starting Check-Timer
+8:57:56 AM  [main] 	Control Panel Ready
+9:14:44 AM  [Tomcat] 	Status change detected: stopped
+11:07:47 AM  [main] 	Deinitializing Modules
+11:07:47 AM  [main] 	Deinitializing Control Panel
+
+7:46:51 AM  [main] 	Initializing Control Panel
+7:46:51 AM  [main] 	Windows Version:  Enterprise  64-bit
+7:46:51 AM  [main] 	XAMPP Version: 8.2.12
+7:46:51 AM  [main] 	Control Panel Version: 3.3.0  [ Compiled: Apr 6th 2021 ]
+7:46:51 AM  [main] 	You are not running with administrator rights! This will work for
+7:46:51 AM  [main] 	most application stuff but whenever you do something with services
+7:46:51 AM  [main] 	there will be a security dialogue or things will break! So think 
+7:46:51 AM  [main] 	about running this application with administrator rights!
+7:46:51 AM  [main] 	XAMPP Installation Directory: "c:\xampp\app\"
+7:46:51 AM  [main] 	Checking for prerequisites
+7:46:53 AM  [main] 	All prerequisites found
+7:46:53 AM  [main] 	Initializing Modules
+7:46:53 AM  [main] 	Starting Check-Timer
+7:46:53 AM  [main] 	Control Panel Ready
+7:46:56 AM  [Apache] 	Attempting to start Apache app...
+7:46:56 AM  [Apache] 	Status change detected: running
+7:52:56 AM  [Apache] 	Attempting to stop Apache (PID: 5328)
+7:52:56 AM  [Apache] 	Attempting to stop Apache (PID: 8924)
+7:52:56 AM  [Apache] 	Status change detected: stopped
+7:52:57 AM  [Apache] 	Attempting to start Apache app...
+7:52:58 AM  [Apache] 	Status change detected: running
+8:52:24 AM  [mysql] 	Attempting to start MySQL app...
+8:52:25 AM  [mysql] 	Status change detected: running
+7:41:14 PM  [main] 	Deinitializing Modules
+7:41:14 PM  [main] 	Deinitializing Control Panel
+
