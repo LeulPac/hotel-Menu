@@ -3,70 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Digital Menu | Hotel Restaurant</title>
+  <title>Culinary Dining Menu | The Grand Hotel</title>
   
   <link rel="stylesheet" href="/css/reset.css">
-  <link rel="stylesheet" href="/css/variables.css">
-  <link rel="stylesheet" href="/css/theme.css">
-  <link rel="stylesheet" href="/css/main.css?v=2">
+  <link rel="stylesheet" href="/css/variables.css?v=3">
+  <link rel="stylesheet" href="/css/theme.css?v=3">
+  <link rel="stylesheet" href="/css/main.css?v=3">
 </head>
 <body>
 
-  <!-- Menu Flow Wrapper -->
+  <!-- Main Dining Flow -->
   <div id="menu-wrapper" class="page-wrapper">
     
-    <!-- Hero Header -->
+    <!-- Luxury Hotel Header -->
     <header class="site-header">
-      <div class="header-logo">The Grand Hotel</div>
-      <h1 class="header-title">Our Menu</h1>
-      <p class="header-subtitle">Tap to add items to your order.</p>
+      <button class="theme-toggle-btn header-theme-toggle" onclick="utils.toggleTheme()" title="Switch Theme" aria-label="Toggle Bright/Dark Mode">🌙</button>
+      <div class="site-header-inner">
+        <div class="header-brand">
+          <svg class="header-crest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span class="header-logo">The Grand Hotel &amp; Suites</span>
+        </div>
+        <h1 class="header-title">In-Room Dining &amp; Culinary Menu</h1>
+        <p class="header-subtitle">Carefully crafted dishes prepared with the finest seasonal ingredients.</p>
+      </div>
     </header>
 
-    <!-- Search -->
+    <!-- Search Input -->
     <div class="search-wrap">
       <div class="search-inner">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="search-input" class="search-input" placeholder="Search dishes..." autocomplete="off">
+        <span class="search-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search culinary selections..." autocomplete="off">
       </div>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="category-tabs" id="category-tabs">
-      <!-- Injected by JS -->
+    <!-- Category Tabs Navigation -->
+    <div class="category-tabs-wrapper">
+      <div class="category-tabs" id="category-tabs">
+        <!-- Injected by JS -->
+      </div>
     </div>
 
-    <!-- Section Title -->
+    <!-- Section Heading -->
     <div class="section-heading">
       <span id="section-heading-text">Menu</span>
     </div>
 
-    <!-- Grid -->
+    <!-- Menu Cards Grid -->
     <main class="menu-grid" id="menu-grid">
-      <!-- Cards Injected by JS -->
+      <!-- Injected by JS -->
     </main>
 
-    <!-- Sticky Cart Bar -->
+    <!-- Floating Order Summary Bar -->
     <div id="cart-bar" class="cart-bar" onclick="Cart.openModal()">
       <div class="cart-bar-left">
         <div class="cart-bubble" id="cart-count">0</div>
-        <div class="cart-label">View Order</div>
+        <div class="cart-label">Review Order</div>
       </div>
       <div class="cart-bar-right">
         <div class="cart-total" id="cart-total">$0.00</div>
+        <span class="cart-bar-arrow">→</span>
       </div>
     </div>
 
-    <!-- Cart Modal -->
+    <!-- Cart / Order Sheet Modal -->
     <div id="overlay" class="overlay" onclick="Cart.closeModal()"></div>
     <div id="cart-modal" class="cart-modal">
       <div class="cart-modal-handle"></div>
       <div class="cart-modal-header">
         <h2>Your Order Summary</h2>
-        <button class="cart-close-btn" onclick="Cart.closeModal()">✕</button>
+        <button class="cart-close-btn" onclick="Cart.closeModal()" title="Close">✕</button>
       </div>
       
       <div class="cart-items" id="cart-items">
-        <!-- Cart rows injected here -->
+        <!-- Injected by JS -->
       </div>
       
       <div class="cart-footer">
@@ -75,59 +91,71 @@
           <div class="cart-total-amt" id="cart-modal-total">$0.00</div>
         </div>
         
-        <!-- Order Type Selection -->
-        <div class="order-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <button id="tab-hotel" class="btn btn-primary" style="flex:1" onclick="Cart.setOrderType('hotel')">At the Hotel</button>
-          <button id="tab-delivery" class="btn btn-ghost" style="flex:1" onclick="Cart.setOrderType('delivery')">Far Away (Delivery)</button>
+        <!-- Dining Location Options -->
+        <div class="order-type-tabs">
+          <button id="tab-room" class="btn btn-primary" style="flex:1" onclick="Cart.setOrderType('room')">Room Service</button>
+          <button id="tab-table" class="btn btn-ghost" style="flex:1" onclick="Cart.setOrderType('table')">Restaurant Table</button>
+          <button id="tab-delivery" class="btn btn-ghost" style="flex:1" onclick="Cart.setOrderType('delivery')">Delivery</button>
         </div>
         
-        <div id="form-hotel" class="table-input-wrap">
-          <label class="table-input-label" for="table-input">
-            Which table are you sitting at? <span class="req">*</span>
+        <!-- Room Service Form -->
+        <div id="form-room" class="table-input-wrap">
+          <label class="table-input-label" for="room-input">
+            Guest Suite / Room Number <span style="color:var(--clr-new)">*</span>
           </label>
-          <input type="number" id="table-input" class="table-number-input" placeholder="e.g. 12" min="1" oninput="Cart.validateTable()">
-          <div id="table-error" class="table-error-msg">Please enter a valid table number.</div>
+          <input type="number" id="room-input" class="table-number-input" placeholder="e.g. 402" min="1" oninput="Cart.validateTable()">
+          <div id="room-error" class="table-error-msg">Please enter your room or suite number.</div>
+        </div>
+
+        <!-- Table Form -->
+        <div id="form-table" class="table-input-wrap" style="display:none;">
+          <label class="table-input-label" for="table-input">
+            Restaurant Dining Table <span style="color:var(--clr-new)">*</span>
+          </label>
+          <input type="number" id="table-input" class="table-number-input" placeholder="e.g. 14" min="1" oninput="Cart.validateTable()">
+          <div id="table-error" class="table-error-msg">Please enter your restaurant table number.</div>
         </div>
         
-        <div id="form-delivery" class="table-input-wrap" style="display: none; flex-direction: column; gap: 12px; max-height: 35vh; overflow-y: auto;">
+        <!-- Delivery Form -->
+        <div id="form-delivery" class="table-input-wrap" style="display: none; flex-direction: column; gap: 10px;">
           <div>
-            <label class="table-input-label" for="delivery-name">Full Name <span class="req">*</span></label>
-            <input type="text" id="delivery-name" class="table-number-input" placeholder="e.g. John Doe" oninput="Cart.validateTable()">
+            <label class="table-input-label" for="delivery-name">Guest Full Name <span style="color:var(--clr-new)">*</span></label>
+            <input type="text" id="delivery-name" class="table-number-input" placeholder="e.g. Alexander Wright" oninput="Cart.validateTable()">
           </div>
           <div>
-            <label class="table-input-label" for="delivery-phone">Phone Number <span class="req">*</span></label>
-            <input type="tel" id="delivery-phone" class="table-number-input" placeholder="e.g. +1 234 567 8900" oninput="Cart.validateTable()">
+            <label class="table-input-label" for="delivery-phone">Contact Phone <span style="color:var(--clr-new)">*</span></label>
+            <input type="tel" id="delivery-phone" class="table-number-input" placeholder="e.g. +1 555 019 2834" oninput="Cart.validateTable()">
           </div>
           <div>
-            <label class="table-input-label" for="delivery-location">Delivery Location <span class="req">*</span></label>
-            <textarea id="delivery-location" class="table-number-input" placeholder="e.g. 123 Main St, Apt 4B" rows="2" style="resize:vertical" oninput="Cart.validateTable()"></textarea>
+            <label class="table-input-label" for="delivery-location">Delivery Destination / Address <span style="color:var(--clr-new)">*</span></label>
+            <textarea id="delivery-location" class="table-number-input" placeholder="e.g. 124 Ocean Blvd, Tower B" rows="2" style="resize:vertical" oninput="Cart.validateTable()"></textarea>
           </div>
-          <div id="delivery-error" class="table-error-msg">Please fill out all delivery fields.</div>
+          <div id="delivery-error" class="table-error-msg">Please complete all required delivery details.</div>
         </div>
         
         <button id="place-order-btn" class="btn btn-primary btn-block btn-lg" onclick="Cart.submitOrder()" disabled>
-          Confirm & Place Order
+          Send Order to Kitchen
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Success Flow Wrapper -->
-  <div id="success-wrapper" class="page-wrapper hidden" style="background:var(--clr-surface);min-height:100vh;">
+  <!-- Order Confirmation Screen -->
+  <div id="success-wrapper" class="page-wrapper hidden" style="background-color:var(--clr-surface);min-height:100vh;">
     <div class="order-success">
       <div class="success-icon">✓</div>
-      <h1 class="success-title">Order Sent!</h1>
-      <p class="success-msg">Your order has been sent to the kitchen. Sit back and relax, your food will be ready soon.</p>
+      <h1 class="success-title">Order Received</h1>
+      <p class="success-msg">Your order has been transmitted directly to our culinary brigade. Your dishes are being prepared with care and will be delivered shortly.</p>
       
-      <button class="btn btn-ghost" style="margin-top:2rem;" onclick="location.reload()">
-        Back to Menu
+      <button class="btn btn-primary" onclick="location.reload()">
+        Return to Dining Menu
       </button>
     </div>
   </div>
 
-  <script src="/js/utils.js?v=4"></script>
-  <script src="/js/api.js?v=4"></script>
-  <script src="/js/cart.js?v=5"></script>
-  <script src="/js/menu.js?v=4"></script>
+  <script src="/js/utils.js?v=5"></script>
+  <script src="/js/api.js?v=5"></script>
+  <script src="/js/cart.js?v=7"></script>
+  <script src="/js/menu.js?v=5"></script>
 </body>
 </html>

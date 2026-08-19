@@ -1,4 +1,4 @@
-/* admin/live.js – Live orders websocket & UI rendering */
+/* admin/live.js – Live Orders Operational Dashboard (Luxury Hospitality Theme) */
 
 window.liveAdmin = {
   orders: [],
@@ -13,15 +13,14 @@ window.liveAdmin = {
 
   setupSocket() {
     if (typeof io === 'undefined') {
-      console.warn('Socket.io not loaded. Falling back to polling.');
-      setInterval(() => this.fetchLiveOrders(true), 5000);
+      console.warn('Socket.io not available. Using polling.');
+      setInterval(() => this.fetchLiveOrders(true), 4000);
       return;
     }
 
     this.socket = io();
     
     this.socket.on('connect', () => {
-      console.log('Socket connected');
       this.socket.emit('joinAdmin');
     });
 
@@ -35,7 +34,7 @@ window.liveAdmin = {
       const idx = this.orders.findIndex(o => o.id === updated.id);
       if (idx !== -1) {
         if (updated.status === 'Delivered') {
-          this.orders.splice(idx, 1); // remove from live view
+          this.orders.splice(idx, 1);
         } else {
           this.orders[idx] = updated;
         }
@@ -45,15 +44,13 @@ window.liveAdmin = {
   },
 
   notifyNewOrder() {
-    utils.toast('New Order Received!', 'info');
+    utils.toast('New Guest Order Received', 'info');
     
-    // Play sound if possible
     const audio = document.getElementById('audio-alert');
     if (audio) {
-      audio.play().catch(e => console.log('Audio autoplay blocked'));
+      audio.play().catch(() => {});
     }
 
-    // Show dot
     const dot = document.getElementById('notif-dot');
     if (dot) dot.classList.add('show');
   },
@@ -80,6 +77,7 @@ window.liveAdmin = {
         }
         this.render();
       }
+      utils.toast(`Order #${id} status: ${newStatus}`, 'info', 1800);
     } catch (e) {
       utils.toast('Failed to update status', 'error');
     }
@@ -90,17 +88,19 @@ window.liveAdmin = {
     tabs.forEach(t => {
       t.addEventListener('click', (e) => {
         tabs.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.filter = e.target.dataset.filter;
+        e.currentTarget.classList.add('active');
+        this.filter = e.currentTarget.dataset.filter;
         this.render();
       });
     });
 
-    // Clear notif dot on click
-    document.querySelector('.nav-item[data-tab="live"]').addEventListener('click', () => {
-      const dot = document.getElementById('notif-dot');
-      if (dot) dot.classList.remove('show');
-    });
+    const notifTrigger = document.querySelector('.nav-item[data-tab="live"]');
+    if (notifTrigger) {
+      notifTrigger.addEventListener('click', () => {
+        const dot = document.getElementById('notif-dot');
+        if (dot) dot.classList.remove('show');
+      });
+    }
   },
 
   render() {
@@ -113,15 +113,15 @@ window.liveAdmin = {
     }
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No orders to display.</div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No active orders under this filter.</div>`;
       return;
     }
 
     grid.innerHTML = filtered.map(o => {
       const itemsHtml = o.items.map(i => `
         <div class="order-item-row">
-          <span>${i.qty}x ${utils.esc(i.name)}</span>
-          <span>${utils.currency(i.price * i.qty)}</span>
+          <span><strong>${i.qty}×</strong> ${utils.esc(i.name)}</span>
+          <span style="font-weight:600;">${utils.currency(i.price * i.qty)}</span>
         </div>
       `).join('');
 
@@ -131,39 +131,57 @@ window.liveAdmin = {
       } else if (o.status === 'Preparing') {
         actionHtml = `<button class="status-btn status-btn-ready" onclick="liveAdmin.updateStatus(${o.id}, 'Ready')">Mark Ready</button>`;
       } else if (o.status === 'Ready') {
-        actionHtml = `<button class="status-btn status-btn-done" onclick="liveAdmin.updateStatus(${o.id}, 'Delivered')">Deliver</button>`;
+        actionHtml = `<button class="status-btn status-btn-done" onclick="liveAdmin.updateStatus(${o.id}, 'Delivered')">Complete &amp; Deliver</button>`;
       }
 
-      const tableStr = o.table_number ? `T${o.table_number}` : 'Delivery';
+      // Identify Room Service vs Table Dining vs Takeaway
+      let locationBadgeHtml = '';
+      if (o.table_number) {
+        if (o.customer_name === 'Room Service') {
+          locationBadgeHtml = `<span class="order-location-badge room">🏨 Room Suite #${o.table_number}</span>`;
+        } else if (o.customer_name === 'Restaurant Dining') {
+          locationBadgeHtml = `<span class="order-location-badge table">🍽️ Table #${o.table_number}</span>`;
+        } else {
+          locationBadgeHtml = `<span class="order-location-badge table">🍽️ Table #${o.table_number}</span>`;
+        }
+      } else {
+        locationBadgeHtml = `<span class="order-location-badge delivery">🚗 Delivery</span>`;
+      }
       
       let customerHtml = '';
       if (!o.table_number && o.customer_name) {
         customerHtml = `
-          <div class="order-customer-details" style="font-size: 13px; color: var(--clr-text-secondary); margin-bottom: 8px; border-bottom: 1px dashed var(--clr-border); padding-bottom: 8px;">
-            <strong>👤 ${utils.esc(o.customer_name)}</strong><br>
-            📞 <a href="tel:${utils.esc(o.customer_phone)}" style="color:var(--clr-primary); text-decoration:none;">${utils.esc(o.customer_phone)}</a><br>
-            📍 ${utils.esc(o.customer_location)}
+          <div style="font-size: 12px; color: var(--clr-text-secondary); margin-bottom: 8px; border-bottom: 1px solid var(--clr-border-subtle); padding-bottom: 6px;">
+            <div><strong>Guest:</strong> ${utils.esc(o.customer_name)}</div>
+            <div><strong>Contact:</strong> <a href="tel:${utils.esc(o.customer_phone)}" style="color:var(--clr-accent); text-decoration:none;">${utils.esc(o.customer_phone)}</a></div>
+            <div><strong>Location:</strong> ${utils.esc(o.customer_location)}</div>
           </div>
         `;
       }
 
       return `
-        <div class="order-card status-${o.status.toLowerCase()} ${o.status === 'New' && (Date.now() - new Date(o.created_at).getTime() < 30000) ? 'is-new' : ''}">
+        <div class="order-card status-${o.status.toLowerCase()}">
           <div class="order-card-head">
-            <div style="display:flex; align-items:baseline; gap:var(--sp-2)">
-              <span class="order-table-num">${tableStr}</span>
-              <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+            <div>
+              <div class="order-table-num">${locationBadgeHtml}</div>
+              <div class="order-id-sub" style="margin-top:4px;">Order #${o.id}</div>
             </div>
-            <div class="order-time">${utils.timeAgo(o.created_at)}</div>
+            <div style="text-align:right;">
+              <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+              <div class="order-time" style="margin-top:2px;">${utils.timeAgo(o.created_at)}</div>
+            </div>
           </div>
           <div class="order-items-list">
             ${customerHtml}
             ${itemsHtml}
           </div>
           <div class="order-card-foot">
-            <div class="order-total">${utils.currency(o.total)}</div>
+            <div>
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--clr-text-muted); display:block;">Total Amount</span>
+              <span class="order-total">${utils.currency(o.total)}</span>
+            </div>
             <div class="order-actions">
-              <button class="btn btn-sm btn-ghost" style="padding:4px 8px; font-size:14px; margin-right:4px; color:var(--clr-primary);" onclick="utils.printBill(${o.id})" title="Print Bill">🖨️</button>
+              <button class="btn btn-sm btn-ghost" style="padding:4px 8px; font-size:11px;" onclick="utils.printBill(${o.id})" title="Print Receipt">Receipt</button>
               ${actionHtml}
             </div>
           </div>

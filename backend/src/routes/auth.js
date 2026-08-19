@@ -15,8 +15,8 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const [rows] = await db.execute(
-      'SELECT * FROM users WHERE email = ? LIMIT 1',
+    const { rows } = await db.query(
+      'SELECT * FROM users WHERE email = $1 LIMIT 1',
       [email]
     );
 
@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'hotel_menu_secret_key_jwt',
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
 
@@ -45,7 +45,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error.' });
+    res.status(500).json({ error: 'Server error during login.' });
   }
 });
 
@@ -56,7 +56,7 @@ router.post('/verify', (req, res) => {
     return res.status(401).json({ valid: false });
   }
   try {
-    const payload = jwt.verify(auth.slice(7), process.env.JWT_SECRET);
+    const payload = jwt.verify(auth.slice(7), process.env.JWT_SECRET || 'hotel_menu_secret_key_jwt');
     res.json({ valid: true, user: payload });
   } catch {
     res.status(401).json({ valid: false });

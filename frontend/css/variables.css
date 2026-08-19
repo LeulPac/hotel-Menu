@@ -1,72 +1,156 @@
 /* ============================================================
-   variables.css – Design tokens
+   variables.css – Luxury Hotel Design Tokens
+   Light Mode (Warm Ivory & Bronze) & Dark Mode (Obsidian & Gold)
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
+/* ── LIGHT MODE ☀️ ── */
 :root {
-  /* ── Brand Palette ── */
-  --clr-primary:       hsl(225, 70%, 55%);
-  --clr-primary-dark:  hsl(225, 70%, 42%);
-  --clr-primary-light: hsl(225, 70%, 70%);
-  --clr-accent:        hsl(38, 95%, 55%);
-  --clr-accent-dark:   hsl(38, 95%, 42%);
+  /* Backgrounds */
+  --clr-bg:               #F7F5F0;       /* Primary page background */
+  --clr-bg-subtle:        #EFEBE3;       /* Secondary background */
+  --clr-surface:          #FFFFFF;       /* Cards / surfaces */
+  --clr-surface-elevated: #FFFFFF;       /* Elevated surfaces */
+  --clr-surface-dim:      #F7F5F0;
 
-  /* ── Neutrals ── */
-  --clr-bg:            hsl(220, 20%, 97%);
-  --clr-surface:       #ffffff;
-  --clr-surface-2:     hsl(220, 20%, 94%);
-  --clr-border:        hsl(220, 15%, 88%);
-  --clr-text:          hsl(220, 25%, 15%);
-  --clr-text-muted:    hsl(220, 15%, 50%);
-  --clr-text-light:    hsl(220, 10%, 70%);
+  /* Typography */
+  --clr-text:             #17191C;       /* Primary text */
+  --clr-text-secondary:   #555A5F;       /* Secondary text */
+  --clr-text-muted:       #777C80;       /* Muted text */
+  --clr-text-light:       #9B9FA3;
+  --clr-text-inverse:     #FFFFFF;
 
-  /* ── Status Colors ── */
-  --clr-new:           hsl(4,   80%, 58%);   /* red   */
-  --clr-preparing:     hsl(38,  95%, 52%);   /* amber */
-  --clr-ready:         hsl(142, 60%, 42%);   /* green */
-  --clr-delivered:     hsl(220, 15%, 62%);   /* grey  */
+  /* Accent (Bronze / Gold) */
+  --clr-accent:           #9A702E;       /* Primary accent */
+  --clr-accent-hover:     #7E5923;       /* Accent hover */
+  --clr-accent-light:     #F3E8D0;       /* Light accent background */
+  --clr-accent-border:    #D5BE95;
+  --clr-accent-dark:      #684716;
 
-  /* ── Gradients ── */
-  --grad-hero:         linear-gradient(135deg, hsl(225,70%,22%) 0%, hsl(260,65%,28%) 100%);
-  --grad-card:         linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
-  --grad-accent:       linear-gradient(90deg, var(--clr-accent), hsl(30,95%,55%));
-  --grad-primary:      linear-gradient(135deg, var(--clr-primary), hsl(260,70%,55%));
+  /* Primary Button / Header Branding */
+  --clr-primary:          #17191C;
+  --clr-primary-hover:    #2A2E33;
+  --clr-primary-light:    #3E444B;
 
-  /* ── Glass ── */
-  --glass-bg:          rgba(255, 255, 255, 0.15);
-  --glass-border:      rgba(255, 255, 255, 0.25);
-  --glass-blur:        blur(14px);
+  /* Borders */
+  --clr-border:           #DDD9D0;       /* Primary border */
+  --clr-border-subtle:    #EAE7E0;       /* Light border */
+  --clr-border-focus:     #9A702E;       /* Focus outline */
+  --clr-border-dark:      #C8C3B8;
 
-  /* ── Shadows ── */
-  --shadow-xs:         0 1px 3px rgba(0,0,0,0.07);
-  --shadow-sm:         0 2px 8px rgba(0,0,0,0.09);
-  --shadow-md:         0 6px 24px rgba(0,0,0,0.11);
-  --shadow-lg:         0 16px 48px rgba(0,0,0,0.14);
-  --shadow-xl:         0 24px 72px rgba(0,0,0,0.18);
+  /* Semantic Status Colors (High Contrast) */
+  --clr-new:              #9B2C2C;
+  --clr-new-bg:           #FBEBEB;
+  --clr-new-border:       #F3C2C2;
 
-  /* ── Border Radius ── */
-  --radius-sm:         6px;
-  --radius-md:         12px;
-  --radius-lg:         18px;
-  --radius-xl:         26px;
-  --radius-full:       9999px;
+  --clr-preparing:        #8A5816;
+  --clr-preparing-bg:     #FDF3E5;
+  --clr-preparing-border: #F3D7B0;
 
-  /* ── Typography ── */
-  --font-sans:         'Inter', system-ui, sans-serif;
-  --font-display:      'Playfair Display', Georgia, serif;
+  --clr-ready:            #1B6E45;
+  --clr-ready-bg:         #E8F5EE;
+  --clr-ready-border:     #B8E2CC;
 
-  /* ── Spacing scale ── */
-  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --clr-delivered:        #555A5F;
+  --clr-delivered-bg:     #F0EFEA;
+  --clr-delivered-border: #DDD9D0;
+
+  /* Gradients */
+  --grad-subtle:          linear-gradient(135deg, #FFFFFF 0%, #F7F5F0 100%);
+  --grad-accent:          linear-gradient(135deg, #9A702E 0%, #B88B43 100%);
+
+  /* Shadows (Diffuse & Subtle) */
+  --shadow-xs:            0 1px 2px rgba(23, 25, 28, 0.04);
+  --shadow-sm:            0 2px 6px rgba(23, 25, 28, 0.05), 0 1px 2px rgba(23, 25, 28, 0.03);
+  --shadow-md:            0 4px 16px rgba(23, 25, 28, 0.08), 0 1px 3px rgba(23, 25, 28, 0.04);
+  --shadow-lg:            0 12px 32px rgba(23, 25, 28, 0.1);
+  --shadow-modal:         0 20px 50px rgba(23, 25, 28, 0.18);
+
+  /* Border Radii */
+  --radius-xs:            2px;
+  --radius-sm:            4px;
+  --radius-md:            6px;
+  --radius-lg:            8px;
+  --radius-xl:            12px;
+  --radius-full:          9999px;
+
+  /* Typography Scales */
+  --font-serif:           'Cormorant Garamond', Garamond, Georgia, serif;
+  --font-sans:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing Scale */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;  --sp-4: 16px;
+  --sp-5: 20px;  --sp-6: 24px;  --sp-8: 32px;  --sp-10: 40px;
   --sp-12: 48px; --sp-16: 64px;
 
-  /* ── Transitions ── */
-  --ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast:     150ms;
-  --dur-normal:   250ms;
-  --dur-slow:     400ms;
+  /* Transitions */
+  --ease-standard:        cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast:             140ms;
+  --dur-normal:           240ms;
+  --dur-slow:             380ms;
 
-  /* ── Cart bar height ── */
-  --cart-bar-h:   68px;
+  --cart-bar-h:           64px;
+}
+
+/* ── DARK MODE 🌙 ── */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --clr-bg:               #0F1318;       /* Primary page background */
+  --clr-bg-subtle:        #151A21;       /* Secondary background */
+  --clr-surface:          #1B222B;       /* Cards / surfaces */
+  --clr-surface-elevated: #222A34;       /* Elevated surfaces */
+  --clr-surface-dim:      #151A21;
+
+  /* Typography */
+  --clr-text:             #F3F1EA;       /* Primary text */
+  --clr-text-secondary:   #C0BDB5;       /* Secondary text */
+  --clr-text-muted:       #92918C;       /* Muted text */
+  --clr-text-light:       #676662;
+  --clr-text-inverse:     #0F1318;
+
+  /* Accent (Luminous Gold / Bronze) */
+  --clr-accent:           #C5A05A;       /* Primary accent */
+  --clr-accent-hover:     #D6B873;       /* Accent hover */
+  --clr-accent-light:     #332B1C;       /* Accent soft background */
+  --clr-accent-border:    #5C4926;
+  --clr-accent-dark:      #E4C788;
+
+  /* Primary Button / Header Branding */
+  --clr-primary:          #F3F1EA;
+  --clr-primary-hover:    #FFFFFF;
+  --clr-primary-light:    #D9D6CE;
+
+  /* Borders */
+  --clr-border:           #303945;       /* Primary border */
+  --clr-border-subtle:    #3A4551;       /* Light border */
+  --clr-border-focus:     #C5A05A;       /* Focus outline */
+  --clr-border-dark:      #4A5666;
+
+  /* Semantic Status Colors (High Contrast) */
+  --clr-new:              #F07171;
+  --clr-new-bg:           #2B1414;
+  --clr-new-border:       #542525;
+
+  --clr-preparing:        #E5A84B;
+  --clr-preparing-bg:     #2B1F10;
+  --clr-preparing-border: #543D1F;
+
+  --clr-ready:            #4ECB89;
+  --clr-ready-bg:         #132B1F;
+  --clr-ready-border:     #215239;
+
+  --clr-delivered:        #C0BDB5;
+  --clr-delivered-bg:     #1F242C;
+  --clr-delivered-border: #303945;
+
+  /* Gradients */
+  --grad-subtle:          linear-gradient(135deg, #151A21 0%, #1B222B 100%);
+  --grad-accent:          linear-gradient(135deg, #A9823D 0%, #C5A05A 100%);
+
+  /* Shadows */
+  --shadow-xs:            0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm:            0 2px 6px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg:            0 12px 32px rgba(0, 0, 0, 0.7);
+  --shadow-modal:         0 20px 50px rgba(0, 0, 0, 0.85);
 }

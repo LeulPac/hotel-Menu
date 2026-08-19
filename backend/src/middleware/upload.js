@@ -1,38 +1,74 @@
-const multer  = require('multer');
-const path    = require('path');
-const crypto  = require('crypto');
-const fs      = require('fs');
+require('dotenv').config();
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
+const fs = require('fs');
 
+// Configure Cloudinary SDK using your .env credentials
+cloudinary.config({
+  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
+  api_key:    (process.env.CLOUDINARY_API_KEY || '').trim(),
+  api_secret: (process.env.CLOUDINARY_API_SECRET || '').trim(),
+  secure:     true,
+});
+
+// Ensure local uploads directory exists for fallback
 const uploadDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext    = path.extname(file.originalname).toLowerCase();
-    const unique = crypto.randomBytes(10).toString('hex');
-    cb(null, `${unique}${ext}`);
-  },
-});
+// Memory storage for direct processing
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
-  const ext     = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) {
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG, PNG or WebP images are allowed.'));
+    cb(new Error('Only image files are allowed.'));
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
-module.exports = upload;
+// Helper function to upload to Cloudinary with local disk fallback
+async function uploadImage(file) {
+  const isCloudinaryConfigured = Boolean(
+    process.env.CLOUDINARY_URL ||
+    (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
+  );
+
+  if (isCloudinaryConfigured) {
+    try {
+      const secureUrl = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+      return secureUrl;
+    } catch (cloudErr) {
+      console.warn('⚠️ Cloudinary upload returned an error (403/Forbidden). Saving image to local disk /uploads as fallback:', cloudErr.message);
+    }
+  }
+
+  // Fallback: Save buffer to local disk
+  const ext = path.extname(file.originalname) || '.jpg';
+  const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  const filePath = path.join(uploadDir, uniqueName);
+  fs.writeFileSync(filePath, file.buffer);
+  return `/uploads/${uniqueName}`;
+}
+
+module.exports = {
+  upload,
+  uploadImage,
+};

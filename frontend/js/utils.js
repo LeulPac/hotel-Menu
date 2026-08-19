@@ -1,4 +1,4 @@
-/* utils.js – Shared helper utilities */
+/* utils.js – Shared helper utilities (Luxury Hospitality Theme) */
 
 window.utils = {
   /** Format a number as currency */
@@ -15,8 +15,8 @@ window.utils = {
       t.className = 'toast';
       document.body.appendChild(t);
     }
-    t.textContent  = message;
-    t.className    = `toast ${type}`;
+    t.textContent = message;
+    t.className   = `toast ${type}`;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => t.classList.add('show'));
     });
@@ -28,28 +28,28 @@ window.utils = {
   timeAgo(dateStr) {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1)  return 'just now';
-    if (mins < 60) return `${mins} min ago`;
+    if (mins < 1)  return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24)  return `${hrs}h ago`;
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   },
 
-  /** Debounce */
+  /** Debounce helper */
   debounce(fn, ms = 300) {
     let timer;
     return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
   },
 
-  /** Category emojis */
+  /** Refined Category Initial Monogram */
   catEmoji(cat) {
-    const map = { 'Starters':'🥗', 'Main Course':'🍽️', 'Grills':'🥩', 'Desserts':'🍰', 'Drinks':'🥤' };
-    return map[cat] || '🍴';
+    const map = { 'Starters':'ST', 'Main Course':'MC', 'Grills':'GR', 'Desserts':'DS', 'Drinks':'DR' };
+    return map[cat] || 'GH';
   },
 
   /** Escape HTML */
   esc(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   },
 
   /** Format date */
@@ -57,12 +57,34 @@ window.utils = {
     return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   },
 
-  /** Print a beautiful receipt for an order */
+  /** Theme switcher (Dark / Bright Mode) */
+  initTheme() {
+    const saved = localStorage.getItem('hotel_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    this.setTheme(saved);
+  },
+
+  setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('hotel_theme', theme);
+    const btns = document.querySelectorAll('.theme-toggle-btn');
+    btns.forEach(b => {
+      b.innerHTML = theme === 'dark' ? '☀️' : '🌙';
+      b.setAttribute('title', theme === 'dark' ? 'Switch to Bright Mode' : 'Switch to Dark Mode');
+      b.setAttribute('aria-label', theme === 'dark' ? 'Switch to Bright Mode' : 'Switch to Dark Mode');
+    });
+    document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
+  },
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    this.setTheme(current);
+    this.toast(current === 'dark' ? 'Obsidian Dark Mode enabled' : 'Ivory Bright Mode enabled', 'info', 1800);
+  },
+
+  /** Print receipt / bill for hotel order */
   printBill(orderId) {
     let order = null;
-    // Check in Analytics recent orders
     if (window._recentOrdersForPrinting) order = window._recentOrdersForPrinting.find(o => o.id === orderId);
-    // Check in Live orders
     if (!order && window.liveAdmin && window.liveAdmin.orders) order = window.liveAdmin.orders.find(o => o.id === orderId);
     
     if (!order) {
@@ -72,37 +94,58 @@ window.utils = {
 
     const itemsHtml = order.items.map(i => `
       <tr>
-        <td style="padding: 5px 0;">${this.esc(i.name)}</td>
-        <td style="text-align:center;">${i.qty}</td>
-        <td style="text-align:right;">${this.currency(i.price * i.qty)}</td>
+        <td style="padding: 6px 0; font-size: 13px;">${this.esc(i.name)}</td>
+        <td style="text-align:center; padding: 6px 0; font-size: 13px;">${i.qty}</td>
+        <td style="text-align:right; padding: 6px 0; font-size: 13px;">${this.currency(i.price * i.qty)}</td>
       </tr>
     `).join('');
 
+    let diningLocation = `Delivery: ${this.esc(order.customer_name || 'Guest')}`;
+    if (order.table_number) {
+      if (order.customer_name === 'Room Service') {
+        diningLocation = `Room Service: Suite #${order.table_number}`;
+      } else if (order.customer_name === 'Restaurant Dining') {
+        diningLocation = `Restaurant: Table #${order.table_number}`;
+      } else {
+        diningLocation = `Location: #${order.table_number}`;
+      }
+    }
+
     const html = `
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Bill - Order #${order.id}</title>
+          <title>Guest Receipt - #${order.id}</title>
           <style>
-            body { font-family: 'Courier New', Courier, monospace; padding: 20px; max-width: 350px; margin: auto; color: #000; background: #fff; }
-            h2 { text-align: center; margin-bottom: 5px; font-size: 22px; }
-            p { text-align: center; margin-top: 0; font-size: 14px; color: #333; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
-            th { border-bottom: 1px dashed #000; padding-bottom: 5px; text-align: left; }
-            .total-row { border-top: 1px dashed #000; font-weight: bold; font-size: 18px; }
+            @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+            body { font-family: 'Plus Jakarta Sans', sans-serif; padding: 24px; max-width: 320px; margin: auto; color: #111; background: #fff; line-height: 1.4; }
+            .header { text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 12px; margin-bottom: 12px; }
+            .hotel-name { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; letter-spacing: 1px; margin: 0; }
+            .sub { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #777; margin: 4px 0 0; }
+            .info { font-size: 11px; margin: 10px 0; color: #444; }
+            table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+            th { border-bottom: 1px solid #111; padding-bottom: 6px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+            .total-row { border-top: 1px solid #111; font-weight: bold; font-size: 14px; }
             .total-row td { padding-top: 10px; }
-            .footer { text-align: center; font-size: 14px; margin-top: 30px; border-top: 1px dashed #000; padding-top: 15px; }
+            .footer { text-align: center; font-size: 11px; margin-top: 24px; border-top: 1px dashed #ccc; padding-top: 12px; color: #666; }
           </style>
         </head>
         <body onload="window.print(); setTimeout(() => window.close(), 500);">
-          <h2>HOTEL RESTAURANT</h2>
-          <p>Table ${order.table_number}<br>${this.fmtDate(order.created_at)}</p>
-          <p>Order #${order.id}</p>
+          <div class="header">
+            <h1 class="hotel-name">THE GRAND HOTEL</h1>
+            <p class="sub">In-Room Dining &amp; Culinary</p>
+          </div>
+          <div class="info">
+            <div><strong>Order #${order.id}</strong></div>
+            <div>${diningLocation}</div>
+            <div>${this.fmtDate(order.created_at)}</div>
+          </div>
           <table>
             <thead>
               <tr>
                 <th>Item</th>
                 <th style="text-align:center;">Qty</th>
-                <th style="text-align:right;">Price</th>
+                <th style="text-align:right;">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -113,7 +156,7 @@ window.utils = {
               </tr>
             </tbody>
           </table>
-          <div class="footer">Thank you for your visit!</div>
+          <div class="footer">Thank you for dining with us.</div>
         </body>
       </html>
     `;
@@ -127,3 +170,10 @@ window.utils = {
     }
   }
 };
+
+// Initialize theme immediately on DOM ready
+if (typeof document !== 'undefined') {
+  const saved = localStorage.getItem('hotel_theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', () => utils.initTheme());
+}

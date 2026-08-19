@@ -1,33 +1,45 @@
-/* admin/analytics.js – Revenue & Analytics rendering using Chart.js */
+/* admin/analytics.js – Revenue & Analytics Rendering (Theme Adaptive) */
 
 window.analyticsAdmin = {
   period: 'daily',
   chartInstance: null,
+  catChartInstance: null,
+  cachedData: null,
 
   async load() {
     this.bindTabs();
     await this.fetchData();
 
-    // Auto-refresh the analytics every 10 seconds if the tab is active
     if (!this.autoRefreshInterval) {
       this.autoRefreshInterval = setInterval(() => {
         const tab = document.getElementById('tab-analytics');
         if (tab && !tab.classList.contains('hidden')) {
           this.fetchData(true);
         }
-      }, 10000);
+      }, 15000);
+    }
+
+    // Re-render charts when theme changes
+    if (!this._themeListenerBound) {
+      this._themeListenerBound = true;
+      document.addEventListener('themeChanged', () => {
+        if (this.cachedData) {
+          this.renderChart(this.cachedData.revenueChart);
+          this.renderCategoryChart(this.cachedData.revenueByCategory);
+        }
+      });
     }
   },
 
   bindTabs() {
     const tabs = document.querySelectorAll('#analytics-tabs .period-tab');
-    if(tabs.length === 0) return; // avoid rebinding
+    if (tabs.length === 0) return;
 
     tabs.forEach(t => {
       t.addEventListener('click', async (e) => {
         tabs.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.period = e.target.dataset.period;
+        e.currentTarget.classList.add('active');
+        this.period = e.currentTarget.dataset.period;
         await this.fetchData();
       });
     });
@@ -36,6 +48,7 @@ window.analyticsAdmin = {
   async fetchData(silent = false) {
     try {
       const data = await api.get(`/api/analytics/${this.period}`);
+      this.cachedData = data;
       this.renderStats(data);
       this.renderChart(data.revenueChart);
       this.renderCategoryChart(data.revenueByCategory);
@@ -43,7 +56,7 @@ window.analyticsAdmin = {
       this.renderTableRev(data.revenueByTable);
       this.renderRecentOrders(data.recentOrders);
     } catch (e) {
-      if (!silent) utils.toast('Failed to load analytics', 'error');
+      if (!silent) utils.toast('Failed to load analytics data', 'error');
     }
   },
 
@@ -54,39 +67,54 @@ window.analyticsAdmin = {
   },
 
   getCategoryColor(cat) {
-    const colors = {
-      'Starters': '#3b82f6',
-      'Main Course': '#10b981',
-      'Grills': '#f59e0b',
-      'Desserts': '#ec4899',
-      'Drinks': '#8b5cf6',
-      'Uncategorized': '#6b7280'
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const colors = isDark ? {
+      'Starters': '#C5A05A',
+      'Main Course': '#F3F1EA',
+      'Grills': '#A9823D',
+      'Desserts': '#E4C788',
+      'Drinks': '#92918C',
+      'Uncategorized': '#676662'
+    } : {
+      'Starters': '#9A702E',
+      'Main Course': '#17191C',
+      'Grills': '#B88B43',
+      'Desserts': '#CBB28D',
+      'Drinks': '#555A5F',
+      'Uncategorized': '#777C80'
     };
     return colors[cat] || colors['Uncategorized'];
   },
 
   renderChart(chartData) {
     const ctx = document.getElementById('revChart');
-    if (!ctx) return;
+    if (!ctx || !chartData) return;
 
     if (this.chartInstance) {
       this.chartInstance.destroy();
     }
 
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const barColor = isDark ? '#C5A05A' : '#17191C';
+    const barHover = isDark ? '#D6B873' : '#9A702E';
+    const gridColor = isDark ? '#303945' : '#EAE7E0';
+    const tickColor = isDark ? '#92918C' : '#777C80';
+    const tooltipBg = isDark ? '#222A34' : '#17191C';
+    const tooltipText = isDark ? '#F3F1EA' : '#FFFFFF';
+
     const labels = chartData.map(d => d.label);
     const values = chartData.map(d => d.value);
-
-    const primary = getComputedStyle(document.documentElement).getPropertyValue('--clr-primary').trim() || '#4f46e5';
 
     this.chartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
         datasets: [{
-          label: 'Revenue',
+          label: 'Revenue ($)',
           data: values,
-          backgroundColor: primary,
-          borderRadius: 4,
+          backgroundColor: barColor,
+          hoverBackgroundColor: barHover,
+          borderRadius: 2,
         }]
       },
       options: {
@@ -95,17 +123,31 @@ window.analyticsAdmin = {
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+            padding: 10,
+            cornerRadius: 4,
             callbacks: {
               label: function(context) {
-                return utils.currency(context.raw);
+                return ` Revenue: ${utils.currency(context.raw)}`;
               }
             }
           }
         },
         scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }, color: tickColor }
+          },
           y: {
             beginAtZero: true,
+            grid: { color: gridColor },
             ticks: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
+              color: tickColor,
               callback: function(value) { return '$' + value; }
             }
           }
@@ -122,6 +164,12 @@ window.analyticsAdmin = {
       this.catChartInstance.destroy();
     }
 
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const borderColor = isDark ? '#1B222B' : '#FFFFFF';
+    const textColor = isDark ? '#C0BDB5' : '#555A5F';
+    const tooltipBg = isDark ? '#222A34' : '#17191C';
+    const tooltipText = isDark ? '#F3F1EA' : '#FFFFFF';
+
     const labels = catData.map(d => d.label);
     const values = catData.map(d => d.value);
     const colors = labels.map(l => this.getCategoryColor(l));
@@ -133,16 +181,30 @@ window.analyticsAdmin = {
         datasets: [{
           data: values,
           backgroundColor: colors,
-          borderWidth: 0,
+          borderWidth: 2,
+          borderColor: borderColor
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '65%',
+        cutout: '70%',
         plugins: {
-          legend: { position: 'right' },
+          legend: {
+            position: 'right',
+            labels: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '600' },
+              boxWidth: 10,
+              usePointStyle: true,
+              color: textColor
+            }
+          },
           tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            padding: 10,
+            cornerRadius: 4,
             callbacks: {
               label: function(context) {
                 return ` ${context.label}: ${utils.currency(context.raw)}`;
@@ -159,34 +221,22 @@ window.analyticsAdmin = {
     if (!list) return;
 
     if (!items || items.length === 0) {
-      list.innerHTML = `<div class="text-muted" style="padding:var(--sp-4) 0">No items sold yet.</div>`;
+      list.innerHTML = `<div class="empty-state" style="padding:var(--sp-4) 0">No orders recorded in this period.</div>`;
       return;
     }
 
-    const maxRev = Math.max(...items.map(i => i.revenue));
-
     list.innerHTML = items.map((i, idx) => {
-      const pct = (i.revenue / maxRev) * 100;
-      const rankClass = idx === 0 ? 'gold' : '';
-      const catColor = this.getCategoryColor(i.category);
       return `
         <div class="top-item-row">
-          <div class="top-item-rank ${rankClass}">${idx + 1}</div>
-          <div class="top-item-name">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${catColor}; margin-right:4px;" title="${i.category}"></span>
-            ${utils.esc(i.name)} <span class="text-muted" style="font-size:0.8rem">(${i.qty}x)</span>
+          <div class="top-item-rank">#${idx + 1}</div>
+          <div class="top-item-info">
+            <div class="top-item-name">${utils.esc(i.name)} <span style="font-size:0.75rem; color:var(--clr-text-muted);">(${i.qty} ordered)</span></div>
+            <div class="top-item-cat">${utils.esc(i.category)}</div>
           </div>
-          <div class="top-item-bar"><div class="top-item-fill" style="width:0%; background:${catColor}" data-target="${pct}%"></div></div>
-          <div class="top-item-val">${utils.currency(i.revenue)}</div>
+          <div class="top-item-revenue">${utils.currency(i.revenue)}</div>
         </div>
       `;
     }).join('');
-
-    setTimeout(() => {
-      list.querySelectorAll('.top-item-fill').forEach(f => {
-        f.style.width = f.dataset.target;
-      });
-    }, 50);
   },
 
   renderTableRev(tables) {
@@ -194,14 +244,14 @@ window.analyticsAdmin = {
     if (!tbody || !tables) return;
 
     if (tables.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="2" class="text-muted">No table data.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="2" class="text-muted" style="padding:12px;">No dining data for this period.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = tables.slice(0, 10).map(t => `
       <tr>
         <td><strong>${utils.esc(t.table)}</strong></td>
-        <td style="text-align:right">${utils.currency(t.revenue)}</td>
+        <td style="text-align:right; font-family:var(--font-sans); font-weight:700; color:var(--clr-text);">${utils.currency(t.revenue)}</td>
       </tr>
     `).join('');
   },
@@ -210,25 +260,33 @@ window.analyticsAdmin = {
     const tbody = document.getElementById('recent-orders-tbody');
     if (!tbody || !orders) return;
 
-    // Attach orders to global for printing access
     window._recentOrdersForPrinting = orders;
 
     if (orders.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-muted text-center" style="padding:var(--sp-4)">No recent orders found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted text-center" style="padding:var(--sp-6)">No orders available for billing.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = orders.map(o => {
-      const dt = new Date(o.created_at).toLocaleString();
-      const tableStr = o.table_number ? `Table ${o.table_number}` : `Delivery (${utils.esc(o.customer_name)})`;
+      const dt = new Date(o.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      let tableStr = `Delivery (${utils.esc(o.customer_name || 'Guest')})`;
+      if (o.table_number) {
+        if (o.customer_name === 'Room Service') {
+          tableStr = `Suite #${o.table_number} (Room Service)`;
+        } else if (o.customer_name === 'Restaurant Dining') {
+          tableStr = `Table #${o.table_number} (Restaurant)`;
+        } else {
+          tableStr = `Room / Table #${o.table_number}`;
+        }
+      }
       return `
         <tr>
           <td><strong>#${o.id}</strong></td>
-          <td class="text-muted">${dt}</td>
-          <td><span class="badge" style="background:var(--clr-surface-2)">${tableStr}</span></td>
-          <td><strong>${utils.currency(o.total)}</strong></td>
+          <td style="color:var(--clr-text-muted); font-size:0.8rem;">${dt}</td>
+          <td><span style="font-weight:600;">${tableStr}</span></td>
+          <td><strong style="font-family:var(--font-sans); font-size:0.95rem; color:var(--clr-text); font-variant-numeric:tabular-nums;">${utils.currency(o.total)}</strong></td>
           <td style="text-align:right">
-            <button class="btn btn-sm btn-ghost" style="color:var(--clr-primary)" onclick="utils.printBill(${o.id})">🖨️ Print Bill</button>
+            <button class="btn btn-sm btn-ghost" style="padding:3px 10px; font-size:0.75rem;" onclick="utils.printBill(${o.id})">Print Bill</button>
           </td>
         </tr>
       `;
@@ -239,21 +297,21 @@ window.analyticsAdmin = {
     const token = localStorage.getItem('adminToken');
     const url = `/api/analytics/${this.period}/pdf`;
     
-    utils.toast('Generating PDF...', 'info');
+    utils.toast('Generating culinary report PDF...', 'info');
     
     fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.blob())
       .then(blob => {
         const a = document.createElement('a');
         a.href = window.URL.createObjectURL(blob);
-        a.download = `revenue-report-${this.period}-${new Date().toISOString().split('T')[0]}.pdf`;
+        a.download = `GrandHotel-RevenueReport-${this.period}-${new Date().toISOString().split('T')[0]}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        utils.toast('Download complete', 'success');
+        utils.toast('Report downloaded successfully', 'info');
       })
-      .catch(e => {
-        utils.toast('Failed to export PDF', 'error');
+      .catch(() => {
+        utils.toast('Failed to export PDF report', 'error');
       });
   }
 };

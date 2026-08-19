@@ -1,11 +1,12 @@
 {
-  "name": "hotel-menu-backend",
+  "name": "hotel-menu-app",
   "version": "1.0.0",
-  "description": "QR Hotel Restaurant Ordering System – Backend",
-  "main": "src/index.js",
+  "description": "Digital Luxury Hotel Menu & In-Room Dining Management System",
+  "main": "backend/src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "postinstall": "cd backend && npm install"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,8 +21,5 @@
     "pg": "^8.11.3",
     "qrcode": "^1.5.3",
     "socket.io": "^4.6.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
   }
 }

@@ -1,4 +1,4 @@
-/* admin/menuAdmin.js – Menu CRUD management */
+/* admin/menuAdmin.js – Culinary Menu Catalog CRUD (Luxury Hospitality Theme) */
 
 window.menuAdmin = {
   items: [],
@@ -17,7 +17,7 @@ window.menuAdmin = {
     if (!tbody) return;
 
     if (this.items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:var(--sp-6)">No menu items found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:var(--sp-8)">No culinary selections found in the catalog.</td></tr>`;
       return;
     }
 
@@ -34,8 +34,8 @@ window.menuAdmin = {
       const catId = cat.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
       html += `
         <tr onclick="menuAdmin.toggleCategory('${catId}', this)" style="cursor: pointer; user-select: none;">
-          <td colspan="6" style="background: var(--clr-surface-2); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; padding: var(--sp-2) var(--sp-4);">
-            <span class="cat-icon" style="display:inline-block; width:20px; transition: transform 0.2s;">▼</span> ${utils.esc(cat)}
+          <td colspan="6" style="background: var(--clr-surface-dim); font-family:var(--font-sans); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.74rem; color:var(--clr-text-secondary); padding: 8px 14px; border-top:1px solid var(--clr-border);">
+            <span class="cat-icon" style="display:inline-block; width:14px; transition: transform 0.2s;">▾</span> ${utils.esc(cat)} (${grouped[cat].length})
           </td>
         </tr>`;
       
@@ -51,15 +51,18 @@ window.menuAdmin = {
         }
         const firstImg = images.length > 0 ? images[0] : null;
         const imgHtml = firstImg 
-          ? `<img src="${firstImg}" class="menu-item-thumb">`
+          ? `<img src="${firstImg}" class="menu-item-thumb" alt="${utils.esc(i.name)}">`
           : `<div class="menu-item-thumb-placeholder">${utils.catEmoji(i.category)}</div>`;
 
         return `
           <tr class="cat-row-${catId}">
-            <td>${imgHtml}</td>
-            <td><strong>${utils.esc(i.name)}</strong></td>
-            <td><span class="badge" style="background:var(--clr-surface-2)">${utils.esc(i.category)}</span></td>
-            <td>${utils.currency(i.price)}</td>
+            <td style="width: 54px;">${imgHtml}</td>
+            <td>
+              <div style="font-weight: 600; color: var(--clr-text); font-size: 0.9rem;">${utils.esc(i.name)}</div>
+              <div style="font-size: 0.76rem; color: var(--clr-text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${utils.esc(i.description || 'No description')}</div>
+            </td>
+            <td><span style="font-size:0.75rem; font-weight:600; color:var(--clr-accent); text-transform:uppercase; letter-spacing:0.04em;">${utils.esc(i.category)}</span></td>
+            <td><strong style="color:var(--clr-primary); font-family:var(--font-serif); font-size:1.05rem;">${utils.currency(i.price)}</strong></td>
             <td>
               <label class="toggle-switch">
                 <input type="checkbox" ${i.available ? 'checked' : ''} onchange="menuAdmin.toggleAvail(${i.id})">
@@ -67,8 +70,10 @@ window.menuAdmin = {
               </label>
             </td>
             <td>
-              <button class="btn btn-sm btn-ghost" style="padding:4px 8px" onclick="menuAdmin.editItem(${i.id})">Edit</button>
-              <button class="btn btn-sm btn-danger" style="padding:4px 8px; margin-left:var(--sp-2)" onclick="menuAdmin.deleteItem(${i.id})">Del</button>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-sm btn-ghost" style="padding:4px 10px; font-size:0.76rem;" onclick="menuAdmin.editItem(${i.id})">Edit</button>
+                <button class="btn btn-sm btn-danger" style="padding:4px 10px; font-size:0.76rem;" onclick="menuAdmin.deleteItem(${i.id})">Delete</button>
+              </div>
             </td>
           </tr>
         `;
@@ -104,32 +109,31 @@ window.menuAdmin = {
       const idx = this.items.findIndex(i => i.id === id);
       if (idx !== -1) {
         this.items[idx] = updated;
-        utils.toast(`${updated.name} is now ${updated.available ? 'available' : 'unavailable'}`, 'info', 2000);
+        utils.toast(`${updated.name} is now ${updated.available ? 'active on menu' : 'marked unavailable'}`, 'info', 2000);
       }
     } catch (e) {
-      utils.toast('Failed to update status', 'error');
-      this.load(); // revert
+      utils.toast('Failed to update availability status', 'error');
+      this.load();
     }
   },
 
   async deleteItem(id) {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    if (!confirm('Are you sure you want to remove this dish from the catalog?')) return;
     try {
       await api.delete(`/api/menu/${id}`);
       this.items = this.items.filter(i => i.id !== id);
       this.render();
-      utils.toast('Item deleted');
+      utils.toast('Item removed from menu', 'info');
     } catch (e) {
-      utils.toast('Failed to delete', 'error');
+      utils.toast('Failed to delete selection', 'error');
     }
   },
 
-  // Modal handlers
+  // Modal actions
   openModal() {
     document.getElementById('menu-form').reset();
     document.getElementById('item-id').value = '';
-    document.getElementById('modal-title').textContent = 'Add Menu Item';
-    
+    document.getElementById('modal-title').textContent = 'Add Culinary Item';
     document.getElementById('item-img-preview').innerHTML = '';
     
     document.getElementById('menu-modal').classList.add('open');
@@ -166,16 +170,16 @@ window.menuAdmin = {
       images.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
-        img.className = 'img-preview show';
-        img.style.width = '60px';
-        img.style.height = '60px';
+        img.style.width = '52px';
+        img.style.height = '52px';
         img.style.objectFit = 'cover';
-        img.style.borderRadius = '4px';
+        img.style.borderRadius = '3px';
+        img.style.border = '1px solid var(--clr-border)';
         previewContainer.appendChild(img);
       });
     }
 
-    document.getElementById('modal-title').textContent = 'Edit Menu Item';
+    document.getElementById('modal-title').textContent = 'Edit Culinary Item';
     document.getElementById('menu-modal').classList.add('open');
     document.getElementById('menu-modal-backdrop').classList.add('open');
   },
@@ -189,11 +193,11 @@ window.menuAdmin = {
       Array.from(files).forEach(file => {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
-        img.className = 'img-preview show';
-        img.style.width = '60px';
-        img.style.height = '60px';
+        img.style.width = '52px';
+        img.style.height = '52px';
         img.style.objectFit = 'cover';
-        img.style.borderRadius = '4px';
+        img.style.borderRadius = '3px';
+        img.style.border = '1px solid var(--clr-border)';
         previewContainer.appendChild(img);
       });
     }
@@ -202,7 +206,7 @@ window.menuAdmin = {
   async saveItem() {
     const btn = document.getElementById('item-save-btn');
     btn.disabled = true;
-    btn.textContent = 'Saving...';
+    btn.innerHTML = '<span class="spinner"></span> Saving...';
 
     try {
       const id = document.getElementById('item-id').value;
@@ -232,13 +236,13 @@ window.menuAdmin = {
 
       this.render();
       this.closeModal();
-      utils.toast(id ? 'Item updated' : 'Item added', 'success');
+      utils.toast(id ? 'Culinary item updated' : 'New culinary item added', 'info');
 
     } catch (e) {
-      utils.toast(e.message || 'Failed to save', 'error');
+      utils.toast(e.message || 'Failed to save item', 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Save Item';
+      btn.textContent = 'Save Selection';
     }
   }
 };

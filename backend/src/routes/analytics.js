@@ -5,6 +5,13 @@ const { requireAuth} = require('../middleware/auth');
 
 const router = express.Router();
 
+const parseJson = (val) => {
+  if (typeof val === 'string') {
+    try { return JSON.parse(val); } catch(e) { return []; }
+  }
+  return val || [];
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function dateRange(period) {
@@ -37,31 +44,24 @@ router.get('/:period', requireAuth, async (req, res) => {
   const { start, end } = dateRange(period);
 
   try {
-    const [orders] = await db.execute(
+    const { rows: orders } = await db.query(
       `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
        FROM orders
-       WHERE created_at BETWEEN ? AND ?
+       WHERE created_at BETWEEN $1 AND $2
        ORDER BY created_at ASC`,
       [start, end]
     );
 
-    const parseJson = (val) => {
-      if (typeof val === 'string') {
-        try { return JSON.parse(val); } catch(e) { return []; }
-      }
-      return val || [];
-    };
-
     // Parse JSON items
     const parsed = orders.map(o => ({ ...o, items: parseJson(o.items) }));
 
-    // ── Fetch Menu Categories for precise mapping
-    const [menuRows] = await db.execute('SELECT name, category FROM menu_items');
+    // ── Fetch Menu Categories for mapping
+    const { rows: menuRows } = await db.query('SELECT name, category FROM menu_items');
     const catMap = {};
-    menuRows.forEach(row => catMap[row.name] = row.category);
+    menuRows.forEach(row => { catMap[row.name] = row.category; });
 
     // ── Aggregate totals
-    const totalRevenue    = parsed.reduce((s, o) => s + parseFloat(o.total), 0);
+    const totalRevenue    = parsed.reduce((s, o) => s + parseFloat(o.total || 0), 0);
     const totalOrders     = parsed.length;
     const avgOrderValue   = totalOrders ? totalRevenue / totalOrders : 0;
 
@@ -69,25 +69,28 @@ router.get('/:period', requireAuth, async (req, res) => {
     const revenueMap = {};
     parsed.forEach(o => {
       const label = groupLabel(period, o.created_at);
-      revenueMap[label] = (revenueMap[label] || 0) + parseFloat(o.total);
+      revenueMap[label] = (revenueMap[label] || 0) + parseFloat(o.total || 0);
     });
-    const revenueChart = Object.entries(revenueMap).map(([label, value]) => ({ label, value: parseFloat(value.toFixed(2)) }));
+    const revenueChart = Object.entries(revenueMap).map(([label, value]) => ({ 
+      label, 
+      value: parseFloat(value.toFixed(2)) 
+    }));
 
     // ── Revenue by Category & Top-selling items
     const itemMap = {};
     const categoryRevMap = {};
     
     parsed.forEach(o => {
-      o.items.forEach(item => {
+      (o.items || []).forEach(item => {
         const cat = catMap[item.name] || 'Uncategorized';
         
         // Category grouping
-        const itemTotal = item.price * item.qty;
+        const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty, 10) || 1);
         categoryRevMap[cat] = (categoryRevMap[cat] || 0) + itemTotal;
 
         // Top items grouping
         if (!itemMap[item.name]) itemMap[item.name] = { name: item.name, category: cat, qty: 0, revenue: 0 };
-        itemMap[item.name].qty     += item.qty;
+        itemMap[item.name].qty     += (parseInt(item.qty, 10) || 1);
         itemMap[item.name].revenue += itemTotal;
       });
     });
@@ -104,14 +107,14 @@ router.get('/:period', requireAuth, async (req, res) => {
     const tableMap = {};
     parsed.forEach(o => {
       const t = o.table_number ? `Table ${o.table_number}` : `Delivery / Takeaway`;
-      tableMap[t] = (tableMap[t] || 0) + parseFloat(o.total);
+      tableMap[t] = (tableMap[t] || 0) + parseFloat(o.total || 0);
     });
     const revenueByTable = Object.entries(tableMap)
       .map(([table, revenue]) => ({ table, revenue: parseFloat(revenue.toFixed(2)) }))
       .sort((a, b) => b.revenue - a.revenue);
 
-    // ── Recent Orders (for bill printing) - Independent of Date Filter
-    const [recentRows] = await db.execute(
+    // ── Recent Orders (for bill printing)
+    const { rows: recentRows } = await db.query(
       `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
        FROM orders
        ORDER BY created_at DESC
@@ -144,30 +147,24 @@ router.get('/:period/pdf', requireAuth, async (req, res) => {
   const period = req.params.period;
   const { start, end } = dateRange(period);
 
-  const parseJson = (val) => {
-    if (typeof val === 'string') {
-      try { return JSON.parse(val); } catch(e) { return []; }
-    }
-    return val || [];
-  };
-
   try {
-    const [orders] = await db.execute(
+    const { rows: orders } = await db.query(
       `SELECT id, table_number, customer_name, customer_phone, customer_location, items, total, created_at
-       FROM orders WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC`,
+       FROM orders WHERE created_at BETWEEN $1 AND $2 ORDER BY created_at ASC`,
       [start, end]
     );
-    const parsed      = orders.map(o => ({ ...o, items: parseJson(o.items) }));
-    const totalRevenue = parsed.reduce((s, o) => s + parseFloat(o.total), 0);
+    const parsed       = orders.map(o => ({ ...o, items: parseJson(o.items) }));
+    const totalRevenue = parsed.reduce((s, o) => s + parseFloat(o.total || 0), 0);
     const totalOrders  = parsed.length;
     const avg          = totalOrders ? totalRevenue / totalOrders : 0;
 
     // Top items
     const itemMap = {};
-    parsed.forEach(o => o.items.forEach(item => {
+    parsed.forEach(o => (o.items || []).forEach(item => {
       if (!itemMap[item.name]) itemMap[item.name] = { name: item.name, qty: 0, revenue: 0 };
-      itemMap[item.name].qty     += item.qty;
-      itemMap[item.name].revenue += item.price * item.qty;
+      const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty, 10) || 1);
+      itemMap[item.name].qty     += (parseInt(item.qty, 10) || 1);
+      itemMap[item.name].revenue += itemTotal;
     }));
     const topItems = Object.values(itemMap).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
 
@@ -203,7 +200,7 @@ router.get('/:period/pdf', requireAuth, async (req, res) => {
     doc.fontSize(10).fillColor('#333');
     parsed.slice(0, 100).forEach(o => {
       const dt = new Date(o.created_at).toLocaleString();
-      const tableStr = o.table_number ? `Table ${o.table_number}` : `Delivery (${o.customer_name})`;
+      const tableStr = o.table_number ? `Table ${o.table_number}` : `Delivery (${o.customer_name || 'N/A'})`;
       doc.text(`#${o.id}  ${tableStr}  $${parseFloat(o.total).toFixed(2)}  ${dt}`);
     });
     if (parsed.length > 100) doc.text(`... and ${parsed.length - 100} more orders.`);

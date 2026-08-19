@@ -1,9 +1,9 @@
-/* cart.js – Client-side cart logic & table submission */
+/* cart.js – Guest Room Service & Dining Cart (Luxury Hospitality Theme) */
 
 window.Cart = {
   items: {}, // { itemId: qty }
   menuItems: [], // cache of loaded menu
-  orderType: 'hotel', // 'hotel' or 'delivery'
+  orderType: 'room', // 'room' | 'table' | 'delivery'
 
   init() {
     try {
@@ -15,16 +15,14 @@ window.Cart = {
 
   setMenuCache(items) {
     this.menuItems = items;
-    this.updateUI(); // refresh prices
+    this.updateUI();
   },
 
   add(id) {
     this.items[id] = (this.items[id] || 0) + 1;
     this.save();
-    utils.toast('Item added to cart', 'info', 1500);
+    utils.toast('Selection added to your order', 'info', 1500);
     this.updateUI();
-    
-    // Dispatch event so menu.js can update card qty
     document.dispatchEvent(new CustomEvent('cartChanged'));
   },
 
@@ -82,7 +80,7 @@ window.Cart = {
   updateUI() {
     const { count, total, lines } = this.getTotals();
     
-    // Update sticky bar
+    // Sticky bottom bar
     const bar = document.getElementById('cart-bar');
     if (bar) {
       if (count > 0) {
@@ -95,17 +93,27 @@ window.Cart = {
       }
     }
 
-    // Update modal
+    // Modal list
     const modalItems = document.getElementById('cart-items');
     if (modalItems) {
       if (lines.length === 0) {
-        modalItems.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><div>Your cart is empty</div></div>';
+        modalItems.innerHTML = '<div class="empty-state">Your order list is currently empty.</div>';
       } else {
         modalItems.innerHTML = lines.map(l => `
           <div class="cart-item">
-            <div class="cart-item-name">${l.qty}x ${utils.esc(l.name)}</div>
-            <div class="cart-item-price">${utils.currency(l.price * l.qty)}</div>
-            <button class="cart-item-remove-btn" onclick="Cart.deleteItem(${l.id})" style="background:none; border:none; color:var(--clr-new); cursor:pointer; font-size:1.4rem; padding:0 var(--sp-1); margin-left:var(--sp-2); display:flex; align-items:center; justify-content:center; font-weight:bold; line-height:1;" title="Remove item">×</button>
+            <div style="flex:1;">
+              <div class="cart-item-name">${utils.esc(l.name)}</div>
+              <div style="font-size:0.78rem; color:var(--clr-text-muted);">${utils.currency(l.price)} each</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:var(--sp-3);">
+              <div class="qty-ctrl">
+                <button class="qty-btn" onclick="Cart.remove(${l.id})">−</button>
+                <span class="qty-num">${l.qty}</span>
+                <button class="qty-btn" onclick="Cart.add(${l.id})">+</button>
+              </div>
+              <div class="cart-item-price">${utils.currency(l.price * l.qty)}</div>
+              <button class="cart-item-remove-btn" onclick="Cart.deleteItem(${l.id})" style="background:none; border:none; color:var(--clr-text-muted); cursor:pointer; font-size:1.1rem; padding:2px 4px; display:flex; align-items:center;" title="Remove selection">✕</button>
+            </div>
           </div>
         `).join('');
       }
@@ -120,34 +128,35 @@ window.Cart = {
     if (count === 0) return;
     document.getElementById('cart-modal').classList.add('open');
     document.getElementById('overlay').classList.add('active');
-    
-    // check table input
     this.validateTable();
   },
 
   closeModal() {
-    document.getElementById('cart-modal').classList.remove('open');
-    document.getElementById('overlay').classList.remove('active');
+    const m = document.getElementById('cart-modal');
+    const o = document.getElementById('overlay');
+    if (m) m.classList.remove('open');
+    if (o) o.classList.remove('active');
   },
 
   setOrderType(type) {
     this.orderType = type;
-    const tabHotel = document.getElementById('tab-hotel');
+    const tabRoom = document.getElementById('tab-room');
+    const tabTable = document.getElementById('tab-table');
     const tabDelivery = document.getElementById('tab-delivery');
-    const formHotel = document.getElementById('form-hotel');
+    
+    const formRoom = document.getElementById('form-room');
+    const formTable = document.getElementById('form-table');
     const formDelivery = document.getElementById('form-delivery');
 
-    if (type === 'hotel') {
-      tabHotel.className = 'btn btn-primary';
-      tabDelivery.className = 'btn btn-ghost';
-      formHotel.style.display = 'block';
-      formDelivery.style.display = 'none';
-    } else {
-      tabHotel.className = 'btn btn-ghost';
-      tabDelivery.className = 'btn btn-primary';
-      formHotel.style.display = 'none';
-      formDelivery.style.display = 'flex';
-    }
+    // Reset tabs classes
+    if (tabRoom) tabRoom.className = type === 'room' ? 'btn btn-primary' : 'btn btn-ghost';
+    if (tabTable) tabTable.className = type === 'table' ? 'btn btn-primary' : 'btn btn-ghost';
+    if (tabDelivery) tabDelivery.className = type === 'delivery' ? 'btn btn-primary' : 'btn btn-ghost';
+
+    // Show/hide forms
+    if (formRoom) formRoom.style.display = type === 'room' ? 'block' : 'none';
+    if (formTable) formTable.style.display = type === 'table' ? 'block' : 'none';
+    if (formDelivery) formDelivery.style.display = type === 'delivery' ? 'flex' : 'none';
     
     this.validateTable();
   },
@@ -156,7 +165,30 @@ window.Cart = {
     const btn = document.getElementById('place-order-btn');
     if (!btn) return false;
 
-    if (this.orderType === 'hotel') {
+    if (this.orderType === 'room') {
+      const input = document.getElementById('room-input');
+      const err = document.getElementById('room-error');
+      if (!input) return false;
+      
+      const val = input.value.trim();
+      if (!val || isNaN(val) || parseInt(val) < 1) {
+        btn.disabled = true;
+        if (val !== '') {
+          input.classList.add('error');
+          if (err) err.classList.add('show');
+        } else {
+          input.classList.remove('error');
+          if (err) err.classList.remove('show');
+        }
+        return false;
+      }
+      
+      input.classList.remove('error');
+      if (err) err.classList.remove('show');
+      btn.disabled = false;
+      return true;
+
+    } else if (this.orderType === 'table') {
       const input = document.getElementById('table-input');
       const err = document.getElementById('table-error');
       if (!input) return false;
@@ -166,16 +198,16 @@ window.Cart = {
         btn.disabled = true;
         if (val !== '') {
           input.classList.add('error');
-          err.classList.add('show');
+          if (err) err.classList.add('show');
         } else {
           input.classList.remove('error');
-          err.classList.remove('show');
+          if (err) err.classList.remove('show');
         }
         return false;
       }
       
       input.classList.remove('error');
-      err.classList.remove('show');
+      if (err) err.classList.remove('show');
       btn.disabled = false;
       return true;
 
@@ -185,19 +217,19 @@ window.Cart = {
       const loc = document.getElementById('delivery-location');
       const err = document.getElementById('delivery-error');
       
-      const isComplete = name.value.trim() && phone.value.trim() && loc.value.trim();
+      const isComplete = name && phone && loc && name.value.trim() && phone.value.trim() && loc.value.trim();
       
       if (!isComplete) {
         btn.disabled = true;
-        if (name.value.trim() || phone.value.trim() || loc.value.trim()) {
-          err.classList.add('show');
+        if (name && (name.value.trim() || phone.value.trim() || loc.value.trim())) {
+          if (err) err.classList.add('show');
         } else {
-          err.classList.remove('show');
+          if (err) err.classList.remove('show');
         }
         return false;
       }
       
-      err.classList.remove('show');
+      if (err) err.classList.remove('show');
       btn.disabled = false;
       return true;
     }
@@ -207,8 +239,12 @@ window.Cart = {
     if (!this.validateTable()) return;
 
     const payload = {};
-    if (this.orderType === 'hotel') {
+    if (this.orderType === 'room') {
+      payload.table_number = document.getElementById('room-input').value.trim();
+      payload.customer_name = 'Room Service';
+    } else if (this.orderType === 'table') {
       payload.table_number = document.getElementById('table-input').value.trim();
+      payload.customer_name = 'Restaurant Dining';
     } else {
       payload.customer_name = document.getElementById('delivery-name').value.trim();
       payload.customer_phone = document.getElementById('delivery-phone').value.trim();
@@ -220,27 +256,28 @@ window.Cart = {
     
     const btn = document.getElementById('place-order-btn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;margin:0;border-width:2px;"></span> Placing...';
+    btn.innerHTML = '<span class="spinner"></span> Transmitting order...';
 
     try {
-      const res = await api.post('/api/orders', payload);
+      await api.post('/api/orders', payload);
       
       this.closeModal();
       this.clear();
-      document.getElementById('table-input').value = '';
-      document.getElementById('delivery-name').value = '';
-      document.getElementById('delivery-phone').value = '';
-      document.getElementById('delivery-location').value = '';
+      if (document.getElementById('room-input')) document.getElementById('room-input').value = '';
+      if (document.getElementById('table-input')) document.getElementById('table-input').value = '';
+      if (document.getElementById('delivery-name')) document.getElementById('delivery-name').value = '';
+      if (document.getElementById('delivery-phone')) document.getElementById('delivery-phone').value = '';
+      if (document.getElementById('delivery-location')) document.getElementById('delivery-location').value = '';
       
-      // Show success screen
+      // Show confirmation
       document.getElementById('menu-wrapper').classList.add('hidden');
       document.getElementById('success-wrapper').classList.remove('hidden');
       
     } catch (err) {
       console.error(err);
-      utils.toast(err.message || 'Failed to place order', 'error');
+      utils.toast(err.message || 'Failed to submit order', 'error');
       btn.disabled = false;
-      btn.textContent = 'Confirm & Place Order';
+      btn.textContent = 'Send Order to Kitchen';
     }
   }
 };

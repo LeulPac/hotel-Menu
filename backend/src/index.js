@@ -28,10 +28,10 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded images
+// Serve uploaded images (fallback for local files)
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Serve the entire frontend from /frontend
+// Serve frontend static files
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
@@ -62,15 +62,20 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Global Error Caught:', err);
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ error: 'Image file is too large. Please use an image under 5MB.' });
+    return res.status(400).json({ error: 'Image file is too large. Maximum size is 10MB.' });
   }
-  res.status(500).json({ error: err.message || 'Internal Server Error during upload.' });
+  res.status(500).json({ error: err.message || 'Internal Server Error.' });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`\n🚀  Server running at http://localhost:${PORT}`);
-  console.log(`📱  QR Code PNG:    http://localhost:${PORT}/api/qr`);
-  console.log(`🔑  Admin login:    http://localhost:${PORT}/admin/login.html\n`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`\n🚀  Server running at http://localhost:${PORT}`);
+    console.log(`📱  QR Code PNG:    http://localhost:${PORT}/api/qr`);
+    console.log(`🔑  Admin login:    http://localhost:${PORT}/admin/login.html\n`);
+  });
+}
+
+module.exports = app;
+module.exports.server = server;
