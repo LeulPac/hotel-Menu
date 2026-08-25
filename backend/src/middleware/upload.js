@@ -12,10 +12,14 @@ cloudinary.config({
   secure:     true,
 });
 
-// Ensure local uploads directory exists for fallback
+// Ensure local uploads directory exists for fallback (not applicable on Vercel — read-only filesystem)
 const uploadDir = path.join(__dirname, '../../public/uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!process.env.VERCEL && !process.env.NOW_REGION && !fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('⚠️ Could not create uploads directory (read-only filesystem):', e.message);
 }
 
 // Memory storage for direct processing
@@ -60,7 +64,11 @@ async function uploadImage(file) {
     }
   }
 
-  // Fallback: Save buffer to local disk
+  // Fallback: Save buffer to local disk (dev only — Vercel filesystem is read-only)
+  if (process.env.VERCEL || process.env.NOW_REGION) {
+    console.warn('⚠️ No Cloudinary config and running on Vercel — cannot save image locally.');
+    return null;
+  }
   const ext = path.extname(file.originalname) || '.jpg';
   const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
   const filePath = path.join(uploadDir, uniqueName);
