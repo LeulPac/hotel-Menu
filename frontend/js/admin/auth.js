@@ -33,13 +33,16 @@ window.auth = {
   async verify() {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      window.location.href = '/admin/login.html';
+      window.location.replace('/admin/login.html');
       return;
     }
     try {
       const res = await api.post('/api/auth/verify');
       if (!res.valid) throw new Error('Invalid token');
-      
+
+      // Token confirmed valid — reveal the page now
+      document.body.style.visibility = 'visible';
+
       // Update UI with user info if element exists
       const emailEl = document.getElementById('user-email');
       if (emailEl && res.user) {
@@ -47,7 +50,7 @@ window.auth = {
       }
     } catch (e) {
       localStorage.removeItem('adminToken');
-      window.location.href = '/admin/login.html';
+      window.location.replace('/admin/login.html');
     }
   }
 };

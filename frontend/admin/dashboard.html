@@ -8,6 +8,17 @@
   <link rel="stylesheet" href="/css/variables.css?v=4">
   <link rel="stylesheet" href="/css/theme.css?v=4">
   <link rel="stylesheet" href="/css/admin.css?v=4">
+  <!-- Auth guard: hide body instantly to prevent flash of protected content -->
+  <style>body { visibility: hidden; }</style>
+  <script>
+    // Synchronous check — runs before any other script or HTML is painted.
+    // If there's no token at all, redirect immediately (no flash, no API call needed).
+    (function () {
+      if (!localStorage.getItem('adminToken')) {
+        window.location.replace('/admin/login.html');
+      }
+    })();
+  </script>
 </head>
 <body class="admin-layout">
 
