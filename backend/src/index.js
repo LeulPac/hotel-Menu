@@ -1,7 +1,5 @@
 require('dotenv').config();
 const express    = require('express');
-const http       = require('http');
-const { Server } = require('socket.io');
 const cors       = require('cors');
 const path       = require('path');
 const qrcode     = require('qrcode');
@@ -11,17 +9,36 @@ const authRoutes       = require('./routes/auth');
 const menuRoutes       = require('./routes/menu');
 const { router: ordersRouter, setIo } = require('./routes/orders');
 const analyticsRoutes  = require('./routes/analytics');
-const { initSockets }  = require('./sockets');
 
-const app    = express();
-const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'] },
-});
+const app = express();
 
-// ─── Socket.io ───────────────────────────────────────────────────────────────
-initSockets(io);
-setIo(io); // give orders route access to emit events
+// ─── Socket.io (local dev only — Vercel is serverless, no persistent server) ──
+const isServerless = process.env.VERCEL || process.env.NOW_REGION;
+if (!isServerless) {
+  const http           = require('http');
+  const { Server }     = require('socket.io');
+  const { initSockets } = require('./sockets');
+
+  const server = http.createServer(app);
+  const io     = new Server(server, {
+    cors: { origin: '*', methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'] },
+  });
+
+  initSockets(io);
+  setIo(io); // give orders route access to emit events
+
+  // ─── Start (local only) ─────────────────────────────────────────────────────
+  const PORT = process.env.PORT || 4000;
+  if (process.env.NODE_ENV !== 'test') {
+    server.listen(PORT, () => {
+      console.log(`\n🚀  Server running at http://localhost:${PORT}`);
+      console.log(`📱  QR Code:        http://localhost:${PORT}/api/qr`);
+      console.log(`🔑  Admin login:    http://localhost:${PORT}/admin/login.html\n`);
+    });
+  }
+
+  module.exports.server = server;
+}
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({ origin: '*' }));
@@ -44,10 +61,11 @@ app.use('/api/analytics', analyticsRoutes);
 app.get('/api/qr', async (req, res) => {
   try {
     const host = req.protocol + '://' + req.get('host');
-    const url  = `${host}/index.html`;
-    const png  = await qrcode.toBuffer(url, { type: 'png', width: 300, margin: 2 });
-    res.setHeader('Content-Type', 'image/png');
-    res.send(png);
+    const url  = `${host}/`;
+    // Use SVG – no native canvas bindings required (Vercel compatible)
+    const svg = await qrcode.toString(url, { type: 'svg', width: 300, margin: 2 });
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.send(svg);
   } catch (err) {
     res.status(500).json({ error: 'QR generation failed.' });
   }
@@ -67,15 +85,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal Server Error.' });
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 4000;
-if (process.env.NODE_ENV !== 'test') {
-  server.listen(PORT, () => {
-    console.log(`\n🚀  Server running at http://localhost:${PORT}`);
-    console.log(`📱  QR Code PNG:    http://localhost:${PORT}/api/qr`);
-    console.log(`🔑  Admin login:    http://localhost:${PORT}/admin/login.html\n`);
-  });
-}
-
 module.exports = app;
-module.exports.server = server;
+
